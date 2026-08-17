@@ -48,6 +48,7 @@
 #include "attention/sparse_attention_score/sparse_attention_score_torch_adpt.h"
 #include "attention/store_kv_block/store_kv_block_torch_adpt.h"
 #include "attention/store_kv_block_metadata/store_kv_block_metadata_torch_adpt.cpp"
+#include "attention/store_kv_block_metadata_aiv/store_kv_block_metadata_aiv_torch_adpt.h"
 #include <c10/core/Device.h>
 #include <c10/core/Scalar.h>
 #include <c10/util/Exception.h>
@@ -2729,6 +2730,20 @@ TORCH_LIBRARY_EXPAND(CONCAT(_C, _ascend), ops)
          "-> ()"
      );
     ops.impl("store_kv_block_metadata", torch::kPrivateUse1, &vllm_ascend::store_kv_block_metadata);
+
+    ops.def(
+        "store_kv_block_metadata_aiv_serial(Tensor slot_mapping_npu, Tensor group_len, Tensor group_key_idx, Tensor group_key_cache_idx, int block_size=0)"
+        "-> ()"
+    );
+    ops.impl("store_kv_block_metadata_aiv_serial", torch::kPrivateUse1,
+             &vllm_ascend::store_kv_block_metadata_aiv_serial);
+
+    ops.def(
+        "store_kv_block_metadata_aiv_multi(Tensor slot_mapping_npu, Tensor group_len, Tensor group_key_idx, Tensor group_key_cache_idx, int block_size=0)"
+        "-> ()"
+    );
+    ops.impl("store_kv_block_metadata_aiv_multi", torch::kPrivateUse1,
+             &vllm_ascend::store_kv_block_metadata_aiv_multi);
 
     ops.def(
         "store_kv_block(Tensor key_in, Tensor key_cache_in, Tensor group_len, Tensor group_key_idx,Tensor group_key_cache_idx, int block_size=0) -> ()"

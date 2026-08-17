@@ -129,6 +129,7 @@ elif [[ "$SOC_VERSION" =~ ^ascend910b ]]; then
         "chunk_gated_delta_rule_fwd_h"
         "store_kv_block"
         "store_kv_block_metadata"
+        "store_kv_block_metadata_aiv"
         "sparse_attention_score"
     )
 
@@ -177,6 +178,7 @@ elif [[ "$SOC_VERSION" =~ ^ascend910_93 ]]; then
         "chunk_gated_delta_rule_fwd_h"
         "store_kv_block"
         "store_kv_block_metadata"
+        "store_kv_block_metadata_aiv"
         "sparse_attention_score"
     )
     CUSTOM_OPS=$(IFS=';'; echo "${CUSTOM_OPS_ARRAY[*]}")
@@ -244,12 +246,22 @@ log_selected_ops
   log "subshell cwd before cd=$(pwd)"
   cd "${ROOT_DIR}/csrc"
   log "subshell cwd after cd=$(pwd)"
-  log "preserving csrc/build and cleaning output dirs"
-  rm -rf -- output build_out
 
   : "${CUSTOM_OPS:?CUSTOM_OPS is not set}"
   : "${SOC_VERSION:?SOC_VERSION is not set}"
   : "${SOC_ARG:?SOC_ARG is not set}"
+
+  log "preserving csrc/build and cleaning output dirs"
+  rm -rf -- output build_out
+
+  # The aggregate kernel index is generated from the selected op kernels, but
+  # the upstream build graph does not always invalidate it when a new op is
+  # added to an existing csrc/build tree.  Remove only these generated indexes
+  # so incremental builds retain compiled objects while reliably re-indexing
+  # newly added kernels.
+  rm -f -- \
+    "build/binary/${SOC_ARG}/bin/binary_info_config.json" \
+    "build/binary/${SOC_ARG}/bin/relocatable_kernel_info_config.json"
 
   log "build command: bash build.sh --pkg --ops=\"${CUSTOM_OPS}\" --soc=\"${SOC_ARG}\""
   log "building custom ops ${CUSTOM_OPS} for ${SOC_VERSION}"
