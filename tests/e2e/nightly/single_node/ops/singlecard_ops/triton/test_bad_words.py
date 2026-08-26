@@ -5,6 +5,7 @@
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.worker.v2.sample.bad_words import apply_bad_words
 
 # Test cases for different input shapes
@@ -126,7 +127,7 @@ def test_apply_bad_words_no_bad_words(device="npu"):
     apply_bad_words(logits_after, *test_data[1:], num_bad_words_per_req)
 
     # Verify that logits were not modified
-    assert torch.allclose(logits_before, logits_after), "Logits should not be modified when no bad words are present"
+    assert_close(logits_after, logits_before, exact=True, name="no-bad-words logits")
     print("No bad words test passed")
 
 

@@ -5,27 +5,31 @@ import torch
 from einops import rearrange
 from vllm.model_executor.layers.mamba.gdn.base import GatedDeltaNetAttention  # type: ignore[import-not-found]
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.fla.fused_qkvzba_split_reshape import fused_qkvzba_split_reshape_cat
 
 
 def validate_cmp(y_cal, y_ref, dtype, device="npu"):
     y_cal = y_cal.to(device)
     y_ref = y_ref.to(device)
-    if dtype == torch.float16 or dtype == torch.bfloat16:
-        torch.testing.assert_close(y_ref, y_cal, rtol=5e-03, atol=5e-03, equal_nan=True)
+    if dtype in (torch.int32, torch.int64, torch.int16, torch.int8, torch.uint32, torch.bool):
+        assert_close(y_cal, y_ref, exact=True, name="fused_qkvzba_split_reshape_cat")
+        return
+    if dtype in (torch.float16, torch.bfloat16):
+        tolerance = AccuracyTolerance(rtol=5e-3, atol=5e-3)
     elif dtype == torch.float32:
-        torch.testing.assert_close(y_ref, y_cal, rtol=1e-03, atol=1e-03, equal_nan=True)
-    elif (
-        dtype == torch.int32
-        or dtype == torch.int64
-        or dtype == torch.int16
-        or dtype == torch.int8
-        or dtype == torch.uint32
-        or dtype == torch.bool
-    ):
-        assert torch.equal(y_cal, y_ref)
+        tolerance = AccuracyTolerance(rtol=1e-3, atol=1e-3)
     else:
-        raise ValueError('Invalid parameter "dtype" is found : {}'.format(dtype))
+        raise ValueError(f'Invalid parameter "dtype" is found: {dtype}')
+    assert_close(
+        y_cal,
+        y_ref,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        equal_nan=True,
+        name="fused_qkvzba_split_reshape_cat",
+        reason="preserves the kernel's validated split-and-reshape bounds",
+    )
 
 
 @pytest.mark.parametrize("seq_len", [1, 64, 1024, 2048])

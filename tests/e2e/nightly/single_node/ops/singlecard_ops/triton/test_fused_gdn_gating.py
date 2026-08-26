@@ -1,8 +1,12 @@
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend._310p.ops.fla.fused_gdn_gating import fused_gdn_gating_pytorch
 from vllm_ascend.ops.triton.fused_gdn_gating import fused_gdn_gating_patch
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+
+_FUSED_GDN_GATING_TOLERANCE = AccuracyTolerance(rtol=1e-2, atol=1e-2)
 
 
 def test_fused_gdn_gating_310p_parity_precision():
@@ -35,17 +39,21 @@ def test_fused_gdn_gating_310p_parity_precision():
         threshold=20.0,
     )
 
-    torch.testing.assert_close(
+    assert_close(
         triton_g.to(torch.float32).cpu(),
         ref_g.to(torch.float32).cpu(),
-        rtol=1e-2,
-        atol=1e-2,
+        policy_dtype=triton_g.dtype,
+        tolerance=_FUSED_GDN_GATING_TOLERANCE,
         equal_nan=True,
+        name="fused_gdn_gating_g",
+        reason="preserves the existing FP16 gating parity bound",
     )
-    torch.testing.assert_close(
+    assert_close(
         triton_beta.to(torch.float32).cpu(),
         ref_beta.to(torch.float32).cpu(),
-        rtol=1e-2,
-        atol=1e-2,
+        policy_dtype=triton_beta.dtype,
+        tolerance=_FUSED_GDN_GATING_TOLERANCE,
         equal_nan=True,
+        name="fused_gdn_gating_beta",
+        reason="preserves the existing FP16 gating parity bound",
     )

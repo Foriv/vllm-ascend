@@ -3,6 +3,8 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
+
 NUM_TOKENS = [1, 4096]
 NUM_QKV_HEADS = [(2, 1), (16, 2)]
 HEAD_SIZES = [128, 256]
@@ -12,8 +14,7 @@ IS_INTERLEAVED = [True, False]
 HAS_GATE = [True, False]
 DTYPES = [torch.bfloat16, torch.float16]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 1e-2
-DEFAULT_RTOL = 1e-2
+SPLIT_QKV_RMSNORM_MROPE_TOLERANCE = AccuracyTolerance(rtol=1e-2, atol=1e-2)
 
 
 def apply_interleaved_rope(x: torch.Tensor, mrope_section: list[int]) -> torch.Tensor:
@@ -311,13 +312,36 @@ def test_split_qkv_rmsnorm_mrope(
         has_gate=has_gate,
     )
 
-    torch.testing.assert_close(real_q.cpu(), golden_q.cpu(), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(real_k.cpu(), golden_k.cpu(), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(real_v.cpu(), golden_v.cpu(), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+    comparison_reason = "preserve the fused RMSNorm and MRoPE kernel's validated error bound"
+    assert_close(
+        real_q.cpu(),
+        golden_q.cpu(),
+        tolerance=SPLIT_QKV_RMSNORM_MROPE_TOLERANCE,
+        name="split_qkv_rmsnorm_mrope.q",
+        reason=comparison_reason,
+    )
+    assert_close(
+        real_k.cpu(),
+        golden_k.cpu(),
+        tolerance=SPLIT_QKV_RMSNORM_MROPE_TOLERANCE,
+        name="split_qkv_rmsnorm_mrope.k",
+        reason=comparison_reason,
+    )
+    assert_close(
+        real_v.cpu(),
+        golden_v.cpu(),
+        tolerance=SPLIT_QKV_RMSNORM_MROPE_TOLERANCE,
+        name="split_qkv_rmsnorm_mrope.v",
+        reason=comparison_reason,
+    )
     if has_gate:
-        torch.testing.assert_close(real_gate.cpu(), golden_gate.cpu(), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+        assert_close(
+            real_gate.cpu(),
+            golden_gate.cpu(),
+            tolerance=SPLIT_QKV_RMSNORM_MROPE_TOLERANCE,
+            name="split_qkv_rmsnorm_mrope.gate",
+            reason=comparison_reason,
+        )
 
     gc.collect()
     torch.npu.empty_cache()

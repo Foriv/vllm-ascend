@@ -7,6 +7,7 @@ from vllm.platforms import current_platform
 from vllm.triton_utils import HAS_TRITON
 from vllm.v1.sample.ops.topk_topp_sampler import apply_top_k_top_p_pytorch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.v2.sample.apply_top_k_top_p_triton import apply_top_k_top_p_triton
 
 DEVICE_TYPE = current_platform.device_type
@@ -67,8 +68,11 @@ class TestTritonTopkTopp:
 
         if p is None:
             # Top-k only: same selection, values copied verbatim -> bit-exact.
-            assert torch.equal(result_pytorch, result_triton), (
-                f"Top-k mismatch: PyTorch kept {pytorch_kept.tolist()}, Triton kept {triton_kept.tolist()}"
+            assert_close(
+                result_triton,
+                result_pytorch,
+                exact=True,
+                name=f"top-k selection (PyTorch kept {pytorch_kept.tolist()}, Triton kept {triton_kept.tolist()})",
             )
             return
 
@@ -139,7 +143,7 @@ class TestTritonTopkTopp:
 
         result = apply_top_k_top_p_triton(logits_clone, k=None, p=None)
 
-        assert torch.equal(result, logits), "Should be no-op when both k and p are None"
+        assert_close(result, logits, exact=True, name="top-k/top-p no-op output")
 
     def test_extreme_k_values(self):
         """Test edge cases for k values."""
@@ -223,8 +227,13 @@ class TestTritonTopkTopp:
 
         assert noncontig_out.data_ptr() == logits.data_ptr()
         assert not noncontig_out.is_contiguous()
-        assert torch.equal(logits, noncontig_out)
-        assert torch.equal(torch.isfinite(noncontig_out), torch.isfinite(contig_out))
+        assert_close(noncontig_out, logits, exact=True, name="non-contiguous in-place top-k/top-p output")
+        assert_close(
+            torch.isfinite(noncontig_out),
+            torch.isfinite(contig_out),
+            exact=True,
+            name="non-contiguous top-k/top-p finite mask",
+        )
         pytorch_kept = torch.isfinite(pytorch_out).sum(dim=-1)
         triton_kept = torch.isfinite(noncontig_out).sum(dim=-1)
         max_diff = (pytorch_kept - triton_kept).abs().max().item()
@@ -308,17 +317,17 @@ class TestTritonTopkTopp:
         # top-k only
         result = apply_top_k_top_p_triton(logits.clone(), k, None)
         assert not result.isnan().any(), "NaN from all-inf top-k"
-        assert (result == float("-inf")).all(), "Expected all -inf unchanged"
+        assert_close(result, logits, exact=True, name="all-negative-infinity top-k output")
 
         # top-p only
         result = apply_top_k_top_p_triton(logits.clone(), None, p)
         assert not result.isnan().any(), "NaN from all-inf top-p"
-        assert (result == float("-inf")).all(), "Expected all -inf unchanged"
+        assert_close(result, logits, exact=True, name="all-negative-infinity top-p output")
 
         # top-k + top-p
         result = apply_top_k_top_p_triton(logits.clone(), k, p)
         assert not result.isnan().any(), "NaN from all-inf top-k+top-p"
-        assert (result == float("-inf")).all(), "Expected all -inf unchanged"
+        assert_close(result, logits, exact=True, name="all-negative-infinity top-k/top-p output")
 
     def test_few_valid_tokens_with_neginf(self):
         """Only a handful of tokens are finite per row (strict grammar)."""
@@ -489,9 +498,12 @@ class TestTritonTopkTopp:
 
         custom_mask = out_custom == mask_value
         default_mask = out_default == float("-inf")
-        assert torch.equal(custom_mask, default_mask), "custom mask_value changed the masked positions"
-        assert torch.equal(out_custom[~custom_mask], out_default[~default_mask]), (
-            "custom mask_value changed the kept values"
+        assert_close(custom_mask, default_mask, exact=True, name="custom top-k/top-p masked positions")
+        assert_close(
+            out_custom[~custom_mask],
+            out_default[~default_mask],
+            exact=True,
+            name="custom top-k/top-p kept values",
         )
 
     def test_invalid_inputs_rejected(self):

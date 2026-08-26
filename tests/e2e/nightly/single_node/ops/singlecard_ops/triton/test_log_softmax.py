@@ -2,7 +2,10 @@ import pytest
 import torch
 from vllm.triton_utils import triton
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.worker.v2.sample.logprob import _topk_log_softmax_kernel
+
+TOPK_LOG_SOFTMAX_TOLERANCE = AccuracyTolerance(rtol=1e-3, atol=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -57,8 +60,10 @@ def test_topk_log_softmax_kernel(batch_size, vocab_size, num_logprobs):
             ref_output[i, j] = torch_logprobs[i, token_id]
 
     # ========== Verify results ==========
-    assert torch.allclose(triton_output, ref_output, rtol=1e-3, atol=1e-3), (
-        f"Triton output differs from PyTorch reference.\n"
-        f"Max diff: {torch.max(torch.abs(triton_output - ref_output))}\n"
-        f"Mean diff: {torch.mean(torch.abs(triton_output - ref_output))}"
+    assert_close(
+        triton_output,
+        ref_output,
+        tolerance=TOPK_LOG_SOFTMAX_TOLERANCE,
+        name=f"topk_log_softmax[{batch_size=},{vocab_size=},{num_logprobs=}]",
+        reason="preserve the top-k log-softmax kernel's validated error bound",
     )

@@ -11,12 +11,14 @@ import torch
 import torch.nn.functional as F
 import torch_npu  # noqa: F401
 
+from tests.accuracy import assert_nrmse_close
 from vllm_ascend.ops.triton.kda.kda import chunk_kda
 
 DEVICE = "npu"
 
 NPU_RMSE_RATIO_O = 0.005
 NPU_RMSE_RATIO_HT = 0.005
+_KDA_NRMSE_REASON = "recurrent FP accumulation is evaluated with the upstream KDA NRMSE criterion"
 
 
 def reference_l2norm(x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
@@ -60,26 +62,6 @@ def naive_recurrent_kda(
     if not output_final_state:
         S = None
     return o.to(dtype), S
-
-
-def assert_close(
-    name: str,
-    ref: torch.Tensor,
-    tri: torch.Tensor,
-    ratio: float,
-    err_atol: float = 1e-6,
-):
-    """RMSE-based relative error comparison."""
-    abs_err = (ref.detach() - tri.detach()).flatten().abs().max().item()
-    rmse_diff = (ref.detach() - tri.detach()).flatten().square().mean().sqrt().item()
-    rmse_base = ref.detach().flatten().square().mean().sqrt().item()
-    rel_err = rmse_diff / (rmse_base + 1e-8)
-    print(f"{name:>4} | abs={abs_err:.6f} | rmse={rel_err:.6f} | thr={ratio}")
-    if abs_err <= err_atol:
-        return
-    assert not torch.isnan(ref).any(), f"{name}: NaN detected in ref"
-    assert not torch.isnan(tri).any(), f"{name}: NaN detected in tri"
-    assert rel_err < ratio, f"{name}: max abs err {abs_err:.6f}, rmse ratio {rel_err:.6f} >= {ratio}"
 
 
 @pytest.mark.parametrize(
@@ -158,5 +140,17 @@ def test_chunk_kda(
 
     assert not torch.isnan(tri_o).any(), "Triton output o contains NaN"
     assert not torch.isnan(tri_ht).any(), "Triton output ht contains NaN"
-    assert_close("o", ref_o, tri_o, NPU_RMSE_RATIO_O)
-    assert_close("ht", ref_ht, tri_ht.transpose(-1, -2).contiguous(), NPU_RMSE_RATIO_HT)
+    assert_nrmse_close(
+        tri_o,
+        ref_o,
+        max_nrmse=NPU_RMSE_RATIO_O,
+        name="chunk_kda.output",
+        reason=_KDA_NRMSE_REASON,
+    )
+    assert_nrmse_close(
+        tri_ht.transpose(-1, -2).contiguous(),
+        ref_ht,
+        max_nrmse=NPU_RMSE_RATIO_HT,
+        name="chunk_kda.final_state",
+        reason=_KDA_NRMSE_REASON,
+    )

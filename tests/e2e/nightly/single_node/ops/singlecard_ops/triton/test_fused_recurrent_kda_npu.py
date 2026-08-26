@@ -14,6 +14,7 @@ import torch
 import torch.nn.functional as F
 import torch_npu  # noqa: F401
 
+from tests.accuracy import assert_close, assert_nrmse_close
 from vllm_ascend.ops.triton.kda.kda import fused_recurrent_kda
 
 DEVICE = "npu"
@@ -22,6 +23,7 @@ DEVICE = "npu"
 # FP accumulation differences on NPU triton-ascend.
 NPU_RMSE_RATIO_O = 0.005
 NPU_RMSE_RATIO_HT = 0.005
+_KDA_NRMSE_REASON = "recurrent FP accumulation is evaluated with the upstream KDA NRMSE criterion"
 
 
 def reference_l2norm(x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
@@ -68,26 +70,6 @@ def naive_recurrent_kda(
     if not output_final_state:
         S = None
     return o.to(dtype), S
-
-
-def assert_close(
-    name: str,
-    ref: torch.Tensor,
-    tri: torch.Tensor,
-    ratio: float,
-    err_atol: float = 1e-6,
-):
-    """RMSE-based relative error comparison (same logic as FLA's assert_close)."""
-    abs_err = (ref.detach() - tri.detach()).flatten().abs().max().item()
-    rmse_diff = (ref.detach() - tri.detach()).flatten().square().mean().sqrt().item()
-    rmse_base = ref.detach().flatten().square().mean().sqrt().item()
-    rel_err = rmse_diff / (rmse_base + 1e-8)
-    print(f"{name:>8} | max abs err: {abs_err:.6f} | rmse ratio: {rel_err:.6f} | threshold: {ratio}")
-    if abs_err <= err_atol:
-        return
-    assert not torch.isnan(ref).any(), f"{name}: NaN detected in ref"
-    assert not torch.isnan(tri).any(), f"{name}: NaN detected in tri"
-    assert rel_err < ratio, f"{name}: max abs err {abs_err:.6f}, rmse ratio {rel_err:.6f} >= {ratio}"
 
 
 # ---------------------------------------------------------------------------
@@ -181,12 +163,24 @@ def test_fused_recurrent_kda(
     assert not torch.isnan(tri_o).any(), "Triton output o contains NaN"
     assert not torch.isnan(tri_ht).any(), "Triton output ht contains NaN"
 
-    assert_close("o", ref_o, tri_o, NPU_RMSE_RATIO_O)
+    assert_nrmse_close(
+        tri_o,
+        ref_o,
+        max_nrmse=NPU_RMSE_RATIO_O,
+        name="fused_recurrent_kda.output",
+        reason=_KDA_NRMSE_REASON,
+    )
     # Compare final state per sequence: tri_ht[eos-1] in kernel layout [H,V,K]
     for i in range(N):
         e = cu_seqlens[i + 1]
         tri_state = tri_ht[e - 1].transpose(-1, -2).unsqueeze(0)
-        assert_close(f"ht_{i}", ref_states[i], tri_state, NPU_RMSE_RATIO_HT)
+        assert_nrmse_close(
+            tri_state,
+            ref_states[i],
+            max_nrmse=NPU_RMSE_RATIO_HT,
+            name=f"fused_recurrent_kda.final_state_{i}",
+            reason=_KDA_NRMSE_REASON,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -275,16 +269,33 @@ def test_fused_recurrent_kda_decode_inplace(
     )
 
     assert not torch.isnan(tri_o).any(), "Triton output o contains NaN"
-    assert_close("o", ref_o, tri_o, NPU_RMSE_RATIO_O)
+    assert_nrmse_close(
+        tri_o,
+        ref_o,
+        max_nrmse=NPU_RMSE_RATIO_O,
+        name="fused_recurrent_kda.output",
+        reason=_KDA_NRMSE_REASON,
+    )
 
     # Verify inplace state update at each slot
     for i in range(N):
         slot = i + 1
         tri_state = state_buf_tri[slot].transpose(-1, -2).unsqueeze(0)
-        assert_close(f"ht_{i}", ref_states[i], tri_state, NPU_RMSE_RATIO_HT)
+        assert_nrmse_close(
+            tri_state,
+            ref_states[i],
+            max_nrmse=NPU_RMSE_RATIO_HT,
+            name=f"fused_recurrent_kda.final_state_{i}",
+            reason=_KDA_NRMSE_REASON,
+        )
 
     # Verify NULL slot was not modified
-    assert torch.all(state_buf_tri[0] == 0), "NULL slot (0) should not be modified"
+    assert_close(
+        state_buf_tri[0],
+        torch.zeros_like(state_buf_tri[0]),
+        exact=True,
+        name="fused_recurrent_kda null state slot",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -362,8 +373,20 @@ def test_fused_recurrent_kda_fp32(
     assert not torch.isnan(tri_o).any(), "Triton output o contains NaN"
     assert not torch.isnan(tri_ht).any(), "Triton output ht contains NaN"
 
-    assert_close("o", ref_o, tri_o, NPU_RMSE_RATIO_O)
+    assert_nrmse_close(
+        tri_o,
+        ref_o,
+        max_nrmse=NPU_RMSE_RATIO_O,
+        name="fused_recurrent_kda.output",
+        reason=_KDA_NRMSE_REASON,
+    )
     for i in range(N):
         e = cu_seqlens[i + 1]
         tri_state = tri_ht[e - 1].transpose(-1, -2).unsqueeze(0)
-        assert_close(f"ht_{i}", ref_states[i], tri_state, NPU_RMSE_RATIO_HT)
+        assert_nrmse_close(
+            tri_state,
+            ref_states[i],
+            max_nrmse=NPU_RMSE_RATIO_HT,
+            name=f"fused_recurrent_kda.final_state_{i}",
+            reason=_KDA_NRMSE_REASON,
+        )

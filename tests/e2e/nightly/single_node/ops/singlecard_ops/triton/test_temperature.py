@@ -3,7 +3,10 @@ import random
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.worker.v2.sample.gumbel import apply_temperature
+
+TEMPERATURE_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-4)
 
 # Common vocab sizes from mainstream models
 VOCAB_SIZES = [
@@ -74,8 +77,10 @@ def test_temperature_kernel(num_tokens, vocab_size):
     torch_apply_temperature(logits_ref, expanded_idx_mapping, temperature)
 
     # ========== Verify results ==========
-    assert torch.allclose(logits_triton, logits_ref, atol=1e-4, rtol=1e-5), (
-        f"Triton temperature kernel output differs from torch reference.\n"
-        f"Max diff: {torch.max(torch.abs(logits_triton - logits_ref))}\n"
-        f"Mean diff: {torch.mean(torch.abs(logits_triton - logits_ref).float())}"
+    assert_close(
+        logits_triton,
+        logits_ref,
+        tolerance=TEMPERATURE_TOLERANCE,
+        name=f"temperature[{num_tokens=},{vocab_size=}]",
+        reason="preserve the temperature scaling kernel's validated error bound",
     )

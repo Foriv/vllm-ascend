@@ -1,8 +1,11 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.worker.v2.sample.min_p import apply_min_p
+
+MIN_P_LOGITS_TOLERANCE = AccuracyTolerance(rtol=1e-4, atol=1e-4)
 
 
 def torch_min_p_torch(
@@ -78,14 +81,20 @@ def test_apply_min_p_kernel(num_reqs, vocab_size):
     triton_inf_mask = torch.isinf(triton_logits)
     ref_inf_mask = torch.isinf(ref_logits)
 
-    assert torch.equal(triton_inf_mask, ref_inf_mask), (
-        "Masked positions (where logits == -inf) do not match between Triton and PyTorch."
+    assert_close(
+        triton_inf_mask,
+        ref_inf_mask,
+        exact=True,
+        name="min_p.inf_mask",
     )
 
     valid_triton_logits = triton_logits[~triton_inf_mask]
     valid_ref_logits = ref_logits[~ref_inf_mask]
 
-    assert torch.allclose(valid_triton_logits, valid_ref_logits, rtol=1e-4, atol=1e-4), (
-        f"Logits values differ between Triton and PyTorch reference.\n"
-        f"Max diff: {torch.max(torch.abs(valid_triton_logits - valid_ref_logits))}"
+    assert_close(
+        valid_triton_logits,
+        valid_ref_logits,
+        tolerance=MIN_P_LOGITS_TOLERANCE,
+        name="min_p.valid_logits",
+        reason="preserve the min-p sampling kernel's validated error bound on unmasked logits",
     )

@@ -4,7 +4,12 @@ import pytest
 import torch
 from vllm.third_party.flash_linear_attention.ops.l2norm import l2norm_fwd
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend._310p.ops.fla.fused_recurrent_gated_delta_rule import fused_recurrent_gated_delta_rule_pytorch
+
+
+_PARITY_TOLERANCE = AccuracyTolerance(rtol=1e-2, atol=1e-2)
+_STATE_LAYOUT_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-5)
 
 
 def _run_ascendc_gated_delta_rule(
@@ -127,19 +132,23 @@ def test_fused_recurrent_gated_delta_rule_310p_parity_precision():
         use_qk_l2norm_in_kernel=True,
     )
 
-    torch.testing.assert_close(
+    assert_close(
         ref_out.to(torch.float32).cpu(),
         py_out.to(torch.float32).cpu(),
-        rtol=1e-2,
-        atol=1e-2,
+        policy_dtype=ref_out.dtype,
+        tolerance=_PARITY_TOLERANCE,
         equal_nan=True,
+        name="fused_recurrent_gated_delta_rule_output",
+        reason="preserves the existing BF16 AscendC-to-PyTorch parity bound",
     )
-    torch.testing.assert_close(
+    assert_close(
         ref_state.to(torch.float32).cpu(),
         py_state.to(torch.float32).cpu(),
-        rtol=1e-2,
-        atol=1e-2,
+        policy_dtype=ref_state.dtype,
+        tolerance=_PARITY_TOLERANCE,
         equal_nan=True,
+        name="fused_recurrent_gated_delta_rule_state",
+        reason="preserves the existing BF16 AscendC-to-PyTorch parity bound",
     )
 
 
@@ -174,5 +183,17 @@ def test_fused_recurrent_gated_delta_rule_310_state_layout_matches_vllm():
         dtype=torch.float32,
     )
 
-    torch.testing.assert_close(out, expected_out, rtol=1e-5, atol=1e-5)
-    torch.testing.assert_close(final_state, expected_state, rtol=1e-5, atol=1e-5)
+    assert_close(
+        out,
+        expected_out,
+        tolerance=_STATE_LAYOUT_TOLERANCE,
+        name="fused_recurrent_gated_delta_rule_output_layout",
+        reason="preserves the existing state-layout regression bound",
+    )
+    assert_close(
+        final_state,
+        expected_state,
+        tolerance=_STATE_LAYOUT_TOLERANCE,
+        name="fused_recurrent_gated_delta_rule_final_state_layout",
+        reason="preserves the existing state-layout regression bound",
+    )

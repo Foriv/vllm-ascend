@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
+
 NUM_TOKENS = [1, 8, 32]
 NUM_QKV_HEADS = [(6, 1), (8, 2)]
 HEAD_DIMS = [128]
@@ -13,8 +15,7 @@ EPS = [1e-6]
 DTYPES = [torch.bfloat16]
 SEEDS = [0]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 5e-2
-DEFAULT_RTOL = 5e-3
+SPLIT_QKV_TP_RMSNORM_ROPE_TOLERANCE = AccuracyTolerance(rtol=5e-3, atol=5e-2)
 
 
 def _build_rope(num_tokens, rotary_dim, dtype, device):
@@ -158,9 +159,31 @@ def test_split_qkv_tp_rmsnorm_rope(
         sin=sin,
     )
 
-    torch.testing.assert_close(q_fused.to(torch.float32), q_ref.to(torch.float32), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-    torch.testing.assert_close(k_fused.to(torch.float32), k_ref.to(torch.float32), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-    torch.testing.assert_close(v_fused.to(torch.float32), v_ref.to(torch.float32), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+    comparison_reason = "preserve the tensor-parallel fused RMSNorm and RoPE kernel's validated error bound"
+    assert_close(
+        q_fused.to(torch.float32),
+        q_ref.to(torch.float32),
+        policy_dtype=dtype,
+        tolerance=SPLIT_QKV_TP_RMSNORM_ROPE_TOLERANCE,
+        name="split_qkv_tp_rmsnorm_rope.q",
+        reason=comparison_reason,
+    )
+    assert_close(
+        k_fused.to(torch.float32),
+        k_ref.to(torch.float32),
+        policy_dtype=dtype,
+        tolerance=SPLIT_QKV_TP_RMSNORM_ROPE_TOLERANCE,
+        name="split_qkv_tp_rmsnorm_rope.k",
+        reason=comparison_reason,
+    )
+    assert_close(
+        v_fused.to(torch.float32),
+        v_ref.to(torch.float32),
+        policy_dtype=dtype,
+        tolerance=SPLIT_QKV_TP_RMSNORM_ROPE_TOLERANCE,
+        name="split_qkv_tp_rmsnorm_rope.v",
+        reason=comparison_reason,
+    )
 
     gc.collect()
     torch.npu.empty_cache()

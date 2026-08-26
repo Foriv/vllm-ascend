@@ -16,6 +16,7 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.fla import chunk, chunk_o
 from vllm_ascend.utils import enable_custom_op
 
@@ -416,4 +417,10 @@ def test_chunk_gated_delta_rule_fwd_pcp_chaining_subtracts_initial_state(
     final_state = result[3]
     # Sequential: Φ_1·(Φ_0·s0 + p_0) + p_1
     expected = torch.matmul(phi_1, torch.matmul(phi_0, s0) + p_0) + p_1
-    torch.testing.assert_close(final_state, expected, rtol=1e-4, atol=1e-4)
+    assert_close(
+        final_state,
+        expected,
+        tolerance=AccuracyTolerance(rtol=1e-4, atol=1e-4),
+        name="chunk_gated_delta_rule final state composition",
+        reason="preserve the existing sequential state-composition error bound",
+    )

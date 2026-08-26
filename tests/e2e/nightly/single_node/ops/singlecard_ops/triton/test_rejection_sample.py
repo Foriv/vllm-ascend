@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.reject_sample import (
     cal_grid_and_block_size,
     expand_kernel,
@@ -65,7 +66,7 @@ def test_expand_kernel():
             BLOCK_SIZE=block_size,
         )
         torch.npu.synchronize()
-        assert torch.equal(output_ref, output_triton), f"iteration {i}"
+        assert_close(output_triton, output_ref, exact=True, name=f"rejection sample iteration {i}")
 
     gc.collect()
     torch.npu.empty_cache()
@@ -140,7 +141,12 @@ def test_sample_recovered_tokens_kernel():
             VOCAB_BLOCK_SIZE=8,
         )
         torch.npu.synchronize()
-        assert torch.equal(output_token_ids_ref, output_token_ids_triton), f"iteration {i}"
+        assert_close(
+            output_token_ids_triton,
+            output_token_ids_ref,
+            exact=True,
+            name=f"greedy rejection token IDs iteration {i}",
+        )
 
     gc.collect()
     torch.npu.empty_cache()
@@ -223,7 +229,12 @@ def test_rejection_random_sample(synthetic_mode, max_spec_len, vocab_size, batch
         BLOCK_SIZE=block_size,
     )
     torch.npu.synchronize()
-    assert torch.equal(output_token_ids_ref, output_token_ids), f"synthetic_mode={synthetic_mode}"
+    assert_close(
+        output_token_ids,
+        output_token_ids_ref,
+        exact=True,
+        name=f"rejection token IDs synthetic_mode={synthetic_mode}",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
@@ -276,8 +287,11 @@ def test_rejection_greedy_sample_spec_len_1_triton_kernel(synthetic_mode):
             BLOCK_SIZE=block_size,
         )
         torch.npu.synchronize()
-        assert torch.equal(output_token_ids_ref, output_token_ids_triton), (
-            f"iteration {i}, synthetic_mode={synthetic_mode}"
+        assert_close(
+            output_token_ids_triton,
+            output_token_ids_ref,
+            exact=True,
+            name=f"greedy spec-len-1 token IDs iteration {i}, synthetic_mode={synthetic_mode}",
         )
 
     gc.collect()
@@ -348,8 +362,11 @@ def test_rejection_greedy_sample_triton_kernel(synthetic_mode):
             BLOCK_SIZE=block_size,
         )
         torch.npu.synchronize()
-        assert torch.equal(output_token_ids_ref, output_token_ids_triton), (
-            f"iteration {i}, synthetic_mode={synthetic_mode}"
+        assert_close(
+            output_token_ids_triton,
+            output_token_ids_ref,
+            exact=True,
+            name=f"greedy rejection token IDs iteration {i}, synthetic_mode={synthetic_mode}",
         )
 
     gc.collect()
@@ -483,7 +500,12 @@ def test_rejection_sampler_block_verify_triton_kernel(
         SUB_BLOCK=32,
     )
     torch.npu.synchronize()
-    assert torch.equal(output_token_ids_ref, output_token_ids_triton)
+    assert_close(
+        output_token_ids_triton,
+        output_token_ids_ref,
+        exact=True,
+        name="recovered rejection token IDs",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()

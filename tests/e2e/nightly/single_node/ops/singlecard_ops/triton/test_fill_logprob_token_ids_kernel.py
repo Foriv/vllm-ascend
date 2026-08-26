@@ -30,6 +30,7 @@ Fills logprob token IDs matrix:
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.ops.triton.v2.sample.fill_logprob_token_idx import _fill_logprob_token_ids_kernel
 
@@ -137,11 +138,17 @@ class TestFillLogprobTokenIdsKernel:
             PADDED_COLS,
         )
 
-        assert torch.equal(out_token_ids.cpu(), expected_ids), (
-            f"Token IDs do not match for batch_size={batch_size}, topk={topk}."
+        assert_close(
+            out_token_ids.cpu(),
+            expected_ids,
+            exact=True,
+            name=f"logprob token IDs (batch_size={batch_size}, topk={topk})",
         )
-        assert torch.equal(out_valid_mask.cpu(), expected_mask), (
-            f"Valid mask do not match for batch_size={batch_size}, topk={topk}."
+        assert_close(
+            out_valid_mask.cpu(),
+            expected_mask,
+            exact=True,
+            name=f"logprob valid mask (batch_size={batch_size}, topk={topk})",
         )
 
     def test_no_custom_no_topk(self):
@@ -190,5 +197,5 @@ class TestFillLogprobTokenIdsKernel:
             PADDED_COLS,
         )
 
-        torch.testing.assert_close(out_token_ids.cpu(), expected_ids, rtol=0, atol=0)
-        torch.testing.assert_close(out_valid_mask.cpu(), expected_mask, rtol=0, atol=0)
+        assert_close(out_token_ids.cpu(), expected_ids, exact=True, name="logprob token IDs")
+        assert_close(out_valid_mask.cpu(), expected_mask, exact=True, name="logprob valid mask")

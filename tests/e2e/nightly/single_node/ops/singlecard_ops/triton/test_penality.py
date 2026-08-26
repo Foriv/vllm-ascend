@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.worker.v2.sample.penalties import apply_penalties
 
 NUM_TOKENS = [1, 4]
@@ -12,9 +13,6 @@ NUM_SPECULATIVE_TOKENS = [0, 1, 3]
 DTYPES = [torch.bfloat16, torch.float16]
 SEEDS = [42]
 DEVICES = [f"npu:{0}"]
-
-DEFAULT_ATOL = 1e-3
-DEFAULT_RTOL = 1e-3
 
 
 def pytorch_apply_penalties(
@@ -236,12 +234,18 @@ class TestApplyPenalties:
             output_bin_counts,
         )
 
-        atol = DEFAULT_ATOL
-        rtol = DEFAULT_RTOL
-        if dtype == torch.bfloat16:
-            atol = 1e-02
-            rtol = 1e-02
-        assert torch.allclose(logits_triton, logits_pytorch_result, atol=atol, rtol=rtol)
+        tolerance = (
+            AccuracyTolerance(rtol=1e-2, atol=1e-2)
+            if dtype == torch.bfloat16
+            else AccuracyTolerance(rtol=1e-3, atol=1e-3)
+        )
+        assert_close(
+            logits_triton,
+            logits_pytorch_result,
+            tolerance=tolerance,
+            name="apply_penalties",
+            reason="preserves the validated speculative-decoding penalty bounds",
+        )
         gc.collect()
         torch.npu.empty_cache()
         torch.npu.reset_peak_memory_stats()

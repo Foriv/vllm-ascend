@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.spec_decode.utils import (
     copy_and_expand_dflash_and_dspark_inputs_kernel,
 )
@@ -200,12 +201,16 @@ def test_copy_and_expand_dflash_dspark(batch_size, ctx_lens, num_spec, sample_fr
         TILE_SIZE=_COPY_EXPAND_TILE_SIZE,
     )
 
-    torch.testing.assert_close(out_input_ids, ref["out_input_ids"])
-    torch.testing.assert_close(out_context_positions, ref["out_context_positions"])
-    torch.testing.assert_close(out_query_positions, ref["out_query_positions"])
-    torch.testing.assert_close(out_context_slot_mapping, ref["out_context_slot_mapping"])
-    torch.testing.assert_close(out_query_slot_mapping, ref["out_query_slot_mapping"])
-    torch.testing.assert_close(out_token_indices, ref["out_token_indices"])
+    outputs = {
+        "input IDs": (out_input_ids, ref["out_input_ids"]),
+        "context positions": (out_context_positions, ref["out_context_positions"]),
+        "query positions": (out_query_positions, ref["out_query_positions"]),
+        "context slot mapping": (out_context_slot_mapping, ref["out_context_slot_mapping"]),
+        "query slot mapping": (out_query_slot_mapping, ref["out_query_slot_mapping"]),
+        "token indices": (out_token_indices, ref["out_token_indices"]),
+    }
+    for name, (actual, expected) in outputs.items():
+        assert_close(actual, expected, exact=True, name=f"copy-and-expand {name}")
 
     gc.collect()
     torch.npu.empty_cache()

@@ -1,6 +1,7 @@
 import torch
 from vllm.v1.worker.gpu.block_table import _compute_slot_mappings_kernel as ref_compute_slot_mappings_kernel
 
+from tests.accuracy import assert_close
 from vllm_ascend.worker.v2.block_table import _compute_slot_mappings_kernel as ascend_compute_slot_mappings_kernel
 
 
@@ -96,10 +97,11 @@ def test_compute_slot_mapping_npu_kernel():
         )
 
         # ========== Verify results ==========
-        assert torch.equal(slot_mappings, ref_slot_mappings), (
-            f"ascend output differs from gpu reference.\n"
-            f"Max diff: {torch.max(torch.abs(slot_mappings - ref_slot_mappings))}\n"
-            f"Mean diff: {torch.mean(torch.abs(slot_mappings - ref_slot_mappings).float())}"
+        assert_close(
+            slot_mappings,
+            ref_slot_mappings,
+            exact=True,
+            name="slot mappings",
         )
 
     except Exception as e:

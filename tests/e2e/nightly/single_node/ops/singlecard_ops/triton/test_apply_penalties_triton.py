@@ -9,6 +9,7 @@ import pytest
 import torch
 from vllm.v1.sample.ops.penalties import apply_all_penalties as v1_apply_all_penalties
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.sample.penalties import apply_all_penalties as ascend_apply_all_penalties
 
 # Same scenario grid as test_apply_penalties_model_executor (equivalence + boundaries).
@@ -92,10 +93,18 @@ def test_apply_all_penalties_v1_vs_ascend(
         output_token_ids,
     )
 
-    atol = 1e-2 if dtype == torch.bfloat16 else 1e-3
-    rtol = 1e-2 if dtype == torch.bfloat16 else 1e-3
-    assert torch.allclose(logits_ascend.float(), logits_v1.float(), atol=atol, rtol=rtol), (
-        f"Max diff: {(logits_ascend.float() - logits_v1.float()).abs().max().item()}"
+    tolerance = (
+        AccuracyTolerance(rtol=1e-2, atol=1e-2)
+        if dtype == torch.bfloat16
+        else AccuracyTolerance(rtol=1e-3, atol=1e-3)
+    )
+    assert_close(
+        logits_ascend.float(),
+        logits_v1.float(),
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="apply_all_penalties",
+        reason="preserves the validated penalty-update bounds",
     )
     gc.collect()
     torch.npu.empty_cache()

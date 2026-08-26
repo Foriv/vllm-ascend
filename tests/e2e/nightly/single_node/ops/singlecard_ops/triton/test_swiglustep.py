@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.activation.swiglustep import swiglustep_forward_triton
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
@@ -42,11 +43,21 @@ def test_swiglustep_triton_correctness(shape, dtype, limit):
     out_ref = _swiglustep_reference(x, limit=limit)
 
     # bf16 loses ~2 digits around silu(large) / clamp boundary; fp16 is tighter.
-    rtol, atol = (2e-2, 2e-2) if dtype == torch.bfloat16 else (5e-3, 5e-3)
+    tolerance = (
+        AccuracyTolerance(rtol=2e-2, atol=2e-2)
+        if dtype == torch.bfloat16
+        else AccuracyTolerance(rtol=5e-3, atol=5e-3)
+    )
 
     assert out_triton.shape == out_ref.shape
     assert out_triton.dtype == out_ref.dtype
-    assert torch.allclose(out_triton, out_ref, rtol=rtol, atol=atol)
+    assert_close(
+        out_triton,
+        out_ref,
+        tolerance=tolerance,
+        name="swiglustep_forward_triton",
+        reason="validated around the SiLU and clamp boundaries",
+    )
 
 
 @torch.inference_mode()
@@ -61,7 +72,13 @@ def test_swiglustep_triton_clamps_to_golden_value():
 
     assert out.shape == (1, 16)
     expected = torch.full((1, 16), -49.0, dtype=torch.float16, device="npu")
-    assert torch.allclose(out, expected, atol=1e-3)
+    assert_close(
+        out,
+        expected,
+        tolerance=AccuracyTolerance(rtol=1e-5, atol=1e-3),
+        name="swiglustep clamp value",
+        reason="preserves the original golden-value bound",
+    )
     assert not torch.isnan(out).any()
     assert not torch.isinf(out).any()
 
@@ -79,4 +96,10 @@ def test_swiglustep_triton_handles_non_contiguous_input():
     out_ref = _swiglustep_reference(x, limit=7.0)
 
     assert out_triton.shape == out_ref.shape
-    assert torch.allclose(out_triton, out_ref, atol=2e-2, rtol=2e-2)
+    assert_close(
+        out_triton,
+        out_ref,
+        tolerance=AccuracyTolerance(rtol=2e-2, atol=2e-2),
+        name="swiglustep non-contiguous input",
+        reason="validated around the SiLU and clamp boundaries",
+    )

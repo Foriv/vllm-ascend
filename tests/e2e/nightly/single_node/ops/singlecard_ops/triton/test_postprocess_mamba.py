@@ -23,6 +23,7 @@ from vllm.v1.worker.mamba_utils import (
 )
 
 import vllm_ascend.patch.worker.patch_mamba_utils  # noqa: F401
+from tests.accuracy import assert_close
 
 MambaStateCopyFunc = Callable[..., Any]
 _COPY_FUNCS: tuple[MambaStateCopyFunc, ...] = (
@@ -307,12 +308,22 @@ def test_matches_python_postprocess_mamba():
     )
 
     for i in range(cfg.num_layers):
-        torch.testing.assert_close(conv_states_gpu[i], conv_states_py[i])
-        torch.testing.assert_close(temporal_states_gpu[i], temporal_states_py[i])
+        assert_close(conv_states_gpu[i], conv_states_py[i], exact=True, name=f"conv state layer {i}")
+        assert_close(
+            temporal_states_gpu[i],
+            temporal_states_py[i],
+            exact=True,
+            name=f"temporal state layer {i}",
+        )
 
     expected_accepted = torch.tensor(
         input_batch_py.num_accepted_tokens_cpu[: len(req_ids)],
         dtype=torch.int32,
         device=device,
     )
-    torch.testing.assert_close(gpu_ctx.num_accepted_tokens_out[: len(req_ids)], expected_accepted)
+    assert_close(
+        gpu_ctx.num_accepted_tokens_out[: len(req_ids)],
+        expected_accepted,
+        exact=True,
+        name="accepted token counts",
+    )

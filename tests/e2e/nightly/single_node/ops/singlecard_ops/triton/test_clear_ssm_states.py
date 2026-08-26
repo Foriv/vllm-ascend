@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.fla.utils import clear_ssm_states
 
 
@@ -30,7 +31,7 @@ def test_clear_ssm_states_ref_parity(state_shape, dtype):
 
     clear_ssm_states(ssm_states, has_initial_state)
 
-    torch.testing.assert_close(ssm_states, ssm_states_ref)
+    assert_close(ssm_states, ssm_states_ref, exact=True, name="cleared SSM states")
 
     gc.collect()
     torch.npu.empty_cache()

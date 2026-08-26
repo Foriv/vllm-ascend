@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.batch_memcpy import batch_memcpy_kernel
 
 
@@ -32,4 +33,9 @@ def test_batch_memcpy(dtype):
     batch_memcpy_kernel[grid](src_addr_list, dst_addr_list, sizes, BLOCK_SIZE=BLOCK_SIZE)
 
     for i in range(len(sizes)):
-        torch.testing.assert_close(src_tensors_list[i], dst_tensors_list[i], rtol=0, atol=0)
+        assert_close(
+            dst_tensors_list[i],
+            src_tensors_list[i],
+            exact=True,
+            name=f"batch_memcpy tensor {i}",
+        )

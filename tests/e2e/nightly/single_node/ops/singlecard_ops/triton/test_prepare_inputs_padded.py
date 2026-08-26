@@ -4,6 +4,7 @@ import pytest
 import torch
 from vllm.triton_utils import triton
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.spec_decode.utils import prepare_inputs_padded_kernel
 from vllm_ascend.ops.triton.triton_utils import get_vectorcore_num
 from vllm_ascend.spec_decode.llm_base_proposer import _PREPARE_INPUTS_BLOCK_SIZE as BLOCK_SIZE
@@ -70,7 +71,7 @@ def test_prepare_inputs_padded(num_reqs):
         BLOCK_SIZE=BLOCK_SIZE,
     )
 
-    torch.testing.assert_close(out_tri, out_ref)
+    assert_close(out_tri, out_ref, exact=True, name="padded token indices")
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()

@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.rope import rope_forward_triton, rope_forward_triton_siso
 
 IS_NEOX_STYLE = [True, False]
@@ -29,8 +30,7 @@ SISO_NUM_HEADS = [64]
 NUM_TOKENS = [1, 4, 8, 16, 1024]
 SEEDS = [0]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 1e-3
-DEFAULT_RTOL = 1e-3
+ROPE_TOLERANCE = AccuracyTolerance(rtol=1e-3, atol=1e-3)
 
 
 def rotate_neox(x: torch.Tensor) -> torch.Tensor:
@@ -135,8 +135,20 @@ def test_rotary_embedding_triton_kernel(
     q_trt, k_trt = rope_forward_triton(q_trt, k_trt, cos, sin, rope_dim=rotary_dim, is_neox_style=is_neox_style)
     q_gold, k_gold = _rope_pytorch_native(q_gold, k_gold, cos, sin, rope_dim=rotary_dim, is_neox_style=is_neox_style)
     # Compare the results.
-    torch.testing.assert_close(q_trt.view(q_gold.size()), q_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-    torch.testing.assert_close(k_trt.view(k_gold.size()), k_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+    assert_close(
+        q_trt.view(q_gold.size()),
+        q_gold,
+        tolerance=ROPE_TOLERANCE,
+        name="rope_query",
+        reason="preserves the existing rotary-embedding accuracy bound",
+    )
+    assert_close(
+        k_trt.view(k_gold.size()),
+        k_gold,
+        tolerance=ROPE_TOLERANCE,
+        name="rope_key",
+        reason="preserves the existing rotary-embedding accuracy bound",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
@@ -179,8 +191,20 @@ def test_rotary_embedding_triton_kernel_with_cos_sin_cache(
     cos, sin = cos_sin_cache.index_select(0, positions).chunk(2, dim=-1)
     q_gold, k_gold = _rope_pytorch_native(q_gold, k_gold, cos, sin, rope_dim=rotary_dim, is_neox_style=is_neox_style)
     # Compare the results.
-    torch.testing.assert_close(q_trt.view(q_gold.size()), q_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-    torch.testing.assert_close(k_trt.view(k_gold.size()), k_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+    assert_close(
+        q_trt.view(q_gold.size()),
+        q_gold,
+        tolerance=ROPE_TOLERANCE,
+        name="rope_cached_query",
+        reason="preserves the existing cached rotary-embedding accuracy bound",
+    )
+    assert_close(
+        k_trt.view(k_gold.size()),
+        k_gold,
+        tolerance=ROPE_TOLERANCE,
+        name="rope_cached_key",
+        reason="preserves the existing cached rotary-embedding accuracy bound",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
@@ -218,7 +242,13 @@ def test_rotary_embedding_triton_kernel_siso(
     q_trt = rope_forward_triton_siso(q_trt, cos, sin, rope_dim=rotary_dim, is_neox_style=is_neox_style)
     q_gold = _rope_siso_pytorch_native(q_gold, cos, sin, rope_dim=rotary_dim, is_neox_style=is_neox_style)
     # Compare the results.
-    torch.testing.assert_close(q_trt.view(q_gold.size()), q_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
+    assert_close(
+        q_trt.view(q_gold.size()),
+        q_gold,
+        tolerance=ROPE_TOLERANCE,
+        name="rope_siso_query",
+        reason="preserves the existing SISO rotary-embedding accuracy bound",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()

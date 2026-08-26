@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.compute_slot_mapping import (
     _compute_slot_mapping_kernel,
     _next_power_of_2,
@@ -182,7 +183,12 @@ def test_compute_slot_mapping_kernel(
         total_cp_rank,
         cp_kv_cache_interleave_size,
     )
-    torch.testing.assert_close(slot_mapping.cpu(), torch.tensor(expected, dtype=torch.int32))
+    assert_close(
+        slot_mapping.cpu(),
+        torch.tensor(expected, dtype=torch.int32),
+        exact=True,
+        name="slot mapping",
+    )
 
 
 def test_compute_slot_mapping_kernel_four_requests_large_sequences():
@@ -238,4 +244,9 @@ def test_compute_slot_mapping_kernel_four_requests_large_sequences():
         0,
         1,
     )
-    torch.testing.assert_close(slot_mapping.cpu(), torch.tensor(expected, dtype=torch.int32))
+    assert_close(
+        slot_mapping.cpu(),
+        torch.tensor(expected, dtype=torch.int32),
+        exact=True,
+        name="large-sequence slot mapping",
+    )

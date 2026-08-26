@@ -3,7 +3,10 @@ import random
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.worker.v2.sample.logprob import compute_token_logprobs
+
+TOKEN_LOGPROBS_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-4)
 
 
 def torch_compute_token_logprobs(logits: torch.Tensor, token_ids: torch.Tensor) -> torch.Tensor:
@@ -76,14 +79,12 @@ def test_topk_log_softmax_kernel(batch_size, vocab_size, topk):
     logprobs_ref = torch_compute_token_logprobs(logits, token_ids)
 
     # ========== Verify results ==========
-    max_diff = torch.max(torch.abs(logprobs_triton - logprobs_ref)).item()
-    mean_diff = torch.mean(torch.abs(logprobs_triton - logprobs_ref)).item()
-
-    assert torch.allclose(logprobs_triton, logprobs_ref, atol=1e-4, rtol=1e-5), (
-        f"Triton topk_log_softmax kernel output differs from torch reference.\n"
-        f"batch_size={batch_size}, vocab_size={vocab_size}, topk={topk}\n"
-        f"Max diff: {max_diff}\n"
-        f"Mean diff: {mean_diff}"
+    assert_close(
+        logprobs_triton,
+        logprobs_ref,
+        tolerance=TOKEN_LOGPROBS_TOLERANCE,
+        name=f"compute_token_logprobs[{batch_size=},{vocab_size=},{topk=}]",
+        reason="preserve the token log-probability kernel's validated error bound",
     )
 
 
@@ -107,8 +108,12 @@ def test_topk_log_softmax_edge_cases(vocab_size):
     logprobs_triton = compute_token_logprobs(logits, token_ids)
     logprobs_ref = torch_compute_token_logprobs(logits, token_ids)
 
-    assert torch.allclose(logprobs_triton, logprobs_ref, atol=1e-4, rtol=1e-5), (
-        f"Edge case (1,1) failed for vocab_size={vocab_size}"
+    assert_close(
+        logprobs_triton,
+        logprobs_ref,
+        tolerance=TOKEN_LOGPROBS_TOLERANCE,
+        name=f"compute_token_logprobs.single_token[{vocab_size=}]",
+        reason="preserve the token log-probability kernel's validated error bound",
     )
 
     # Test case 2: Logits with extreme values
@@ -126,8 +131,12 @@ def test_topk_log_softmax_edge_cases(vocab_size):
     logprobs_triton = compute_token_logprobs(logits_extreme, token_ids)
     logprobs_ref = torch_compute_token_logprobs(logits_extreme, token_ids)
 
-    assert torch.allclose(logprobs_triton, logprobs_ref, atol=1e-4, rtol=1e-5), (
-        f"Extreme values test failed for vocab_size={vocab_size}"
+    assert_close(
+        logprobs_triton,
+        logprobs_ref,
+        tolerance=TOKEN_LOGPROBS_TOLERANCE,
+        name=f"compute_token_logprobs.extreme_values[{vocab_size=}]",
+        reason="preserve the token log-probability kernel's validated error bound for extreme logits",
     )
 
 
@@ -163,7 +172,12 @@ def test_topk_log_softmax_deterministic(batch_size, vocab_size, topk):
         results.append(result.clone())
 
     for i in range(1, len(results)):
-        assert torch.equal(results[0], results[i]), f"Non-deterministic results detected in run {i}"
+        assert_close(
+            results[i],
+            results[0],
+            exact=True,
+            name=f"compute_token_logprobs.determinism_run_{i}",
+        )
 
 
 @pytest.mark.skip("UB overflow, zengtian needs to fix it later")
@@ -190,9 +204,15 @@ def test_topk_log_softmax_dtypes(dtype):
     logprobs_ref = torch_compute_token_logprobs(logits.float(), token_ids)
 
     # Use slightly larger tolerance for float16 due to precision loss
-    atol = 1e-3 if dtype == torch.float16 else 1e-4
-
-    assert torch.allclose(logprobs_triton, logprobs_ref, atol=atol, rtol=1e-4), f"dtype {dtype} test failed"
+    dtype_tolerance = AccuracyTolerance(rtol=1e-4, atol=1e-3 if dtype == torch.float16 else 1e-4)
+    assert_close(
+        logprobs_triton,
+        logprobs_ref,
+        policy_dtype=dtype,
+        tolerance=dtype_tolerance,
+        name=f"compute_token_logprobs.{dtype}",
+        reason="preserve the dtype-specific token log-probability error bound",
+    )
 
 
 if __name__ == "__main__":
@@ -219,7 +239,13 @@ if __name__ == "__main__":
 
     print(f"Max diff: {max_diff}")
     print(f"Mean diff: {mean_diff}")
-    print(f"All close (atol=1e-4): {torch.allclose(logprobs_triton, logprobs_ref, atol=1e-4, rtol=1e-5)}")
+    assert_close(
+        logprobs_triton,
+        logprobs_ref,
+        tolerance=TOKEN_LOGPROBS_TOLERANCE,
+        name="compute_token_logprobs.quick_sanity_check",
+        reason="use the same validated bound as the automated token log-probability tests",
+    )
 
     print("\nTriton output (first row):", logprobs_triton[0])
     print("PyTorch output (first row):", logprobs_ref[0])

@@ -1,9 +1,13 @@
 # Copyright (c) 2026 Huawei Technologies Co., Ltd. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Mapping
+from types import MappingProxyType
+
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.batch_invariant.matmul import (
     addmm_batch_invariant,
     bmm_batch_invariant,
@@ -20,11 +24,13 @@ from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
 SEED = 42
 DEVICE = "npu"
-TOLERANCES = {
-    torch.float16: (2e-3, 2e-2),
-    torch.bfloat16: (2e-2, 5e-2),
-    torch.float32: (1e-4, 1e-4),
-}
+BATCH_INVARIANT_TOLERANCES: Mapping[torch.dtype, AccuracyTolerance] = MappingProxyType(
+    {
+        torch.float16: AccuracyTolerance(rtol=2e-3, atol=2e-2),
+        torch.bfloat16: AccuracyTolerance(rtol=2e-2, atol=5e-2),
+        torch.float32: AccuracyTolerance(rtol=1e-4, atol=1e-4),
+    }
+)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -36,12 +42,13 @@ def assert_kernel_close(actual: torch.Tensor, expected: torch.Tensor) -> None:
     """Compare in FP32 so the configured tolerances have consistent meaning."""
     assert actual.shape == expected.shape
     assert actual.dtype == expected.dtype
-    rtol, atol = TOLERANCES[actual.dtype]
-    torch.testing.assert_close(
+    assert_close(
         actual.float().cpu(),
         expected.float().cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=actual.dtype,
+        tolerance=BATCH_INVARIANT_TOLERANCES[actual.dtype],
+        name="batch-invariant kernel",
+        reason="validated matmul and reduction accumulation bounds",
     )
 
 
@@ -257,11 +264,12 @@ def test_softmax_batch_invariant_honors_float32_dtype():
     expected = torch.softmax(input_.cpu().float(), dim=-1)
 
     assert actual.dtype == torch.float32
-    torch.testing.assert_close(
+    assert_close(
         actual.cpu(),
         expected,
-        rtol=TOLERANCES[torch.float32][0],
-        atol=TOLERANCES[torch.float32][1],
+        tolerance=BATCH_INVARIANT_TOLERANCES[torch.float32],
+        name="softmax_batch_invariant float32 output",
+        reason="validated long-reduction bound",
     )
 
 

@@ -2,9 +2,13 @@ from unittest.mock import MagicMock, patch
 
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from tests.ut.base import PytestBase
 from vllm_ascend._310p.ops.fla.chunk_gated_delta_rule import chunk_gated_delta_rule_pytorch
 from vllm_ascend.ops.triton.fla.chunk import chunk_gated_delta_rule
+
+
+_STATE_LAYOUT_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-5)
 
 
 class TestChunkGatedDeltaRule(PytestBase):
@@ -73,6 +77,18 @@ def test_chunk_gated_delta_rule_310_state_layout_matches_vllm():
         dtype=torch.float32,
     )
 
-    torch.testing.assert_close(out, expected_out, rtol=1e-5, atol=1e-5)
+    assert_close(
+        out,
+        expected_out,
+        tolerance=_STATE_LAYOUT_TOLERANCE,
+        name="chunk_gated_delta_rule_output_layout",
+        reason="preserves the existing state-layout regression bound",
+    )
     assert final_state is not None
-    torch.testing.assert_close(final_state, expected_state, rtol=1e-5, atol=1e-5)
+    assert_close(
+        final_state,
+        expected_state,
+        tolerance=_STATE_LAYOUT_TOLERANCE,
+        name="chunk_gated_delta_rule_final_state_layout",
+        reason="preserves the existing state-layout regression bound",
+    )

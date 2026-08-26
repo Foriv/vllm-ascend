@@ -3,6 +3,7 @@ import gc
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend._310p.ops.causal_conv1d import causal_conv1d_fn as causal_conv1d_fn_ref
 from vllm_ascend._310p.ops.causal_conv1d import causal_conv1d_update as causal_conv1d_update_ref
 from vllm_ascend.ops.triton.mamba.causal_conv1d import PAD_SLOT_ID, causal_conv1d_fn
@@ -10,26 +11,41 @@ from vllm_ascend.ops.triton.mamba.causal_conv1d import causal_conv1d_update_npu 
 from vllm_ascend.utils import enable_custom_op
 
 
+def _causal_conv_tolerance(dtype: torch.dtype) -> AccuracyTolerance:
+    if dtype == torch.float16:
+        return AccuracyTolerance(rtol=3e-3, atol=1e-2)
+    if dtype == torch.bfloat16:
+        return AccuracyTolerance(rtol=1e-2, atol=1e-2)
+    if dtype == torch.float32:
+        return AccuracyTolerance(rtol=1e-3, atol=4e-3)
+    raise ValueError(f'Invalid parameter "dtype" is found: {dtype}')
+
+
+def _causal_conv_update_tolerance(dtype: torch.dtype) -> AccuracyTolerance:
+    if dtype == torch.float16:
+        return AccuracyTolerance(rtol=3e-3, atol=5e-3)
+    if dtype == torch.bfloat16:
+        return AccuracyTolerance(rtol=1e-2, atol=5e-2)
+    if dtype == torch.float32:
+        return AccuracyTolerance(rtol=3e-4, atol=1e-3)
+    raise ValueError(f'Invalid parameter "dtype" is found: {dtype}')
+
+
 def validate_cmp(y_cal, y_ref, dtype, device="npu"):
     y_cal = y_cal.to(device)
     y_ref = y_ref.to(device)
-    if dtype == torch.float16:
-        torch.testing.assert_close(y_ref, y_cal, rtol=3e-03, atol=1e-02, equal_nan=True)
-    elif dtype == torch.bfloat16:
-        torch.testing.assert_close(y_ref, y_cal, rtol=1e-02, atol=1e-02, equal_nan=True)
-    elif dtype == torch.float32:
-        torch.testing.assert_close(y_ref, y_cal, rtol=1e-03, atol=4e-03, equal_nan=True)
-    elif (
-        dtype == torch.int32
-        or dtype == torch.int64
-        or dtype == torch.int16
-        or dtype == torch.int8
-        or dtype == torch.uint32
-        or dtype == torch.bool
-    ):
-        assert torch.equal(y_cal, y_ref)
-    else:
-        raise ValueError('Invalid parameter "dtype" is found : {}'.format(dtype))
+    if dtype in (torch.int32, torch.int64, torch.int16, torch.int8, torch.uint32, torch.bool):
+        assert_close(y_cal, y_ref, exact=True, name="causal_conv")
+        return
+    assert_close(
+        y_cal,
+        y_ref,
+        policy_dtype=dtype,
+        tolerance=_causal_conv_tolerance(dtype),
+        equal_nan=True,
+        name="causal_conv",
+        reason="validated causal-convolution accumulation error",
+    )
 
 
 @pytest.mark.parametrize("has_initial_state", [False, True])
@@ -199,9 +215,6 @@ def test_causal_conv1d_update_with_batch_gather(
     batch_size, with_padding, dim, width, seqlen, has_bias, silu_activation, itype
 ):
     device = "npu"
-    rtol, atol = (3e-4, 1e-3) if itype == torch.float32 else (3e-3, 5e-3)
-    if itype == torch.bfloat16:
-        rtol, atol = 1e-2, 5e-2
 
     padding = 5 if with_padding else 0
     padded_batch_size = batch_size + padding
@@ -248,9 +261,25 @@ def test_causal_conv1d_update_with_batch_gather(
         x_ref[:batch_size].transpose(1, 2), conv_state_ref, weight, bias, activation=activation
     ).transpose(1, 2)
 
-    assert torch.equal(conv_state[conv_state_indices, :], conv_state_ref)
-    assert torch.equal(conv_state[unused_states_bool], conv_state_for_padding_test[unused_states_bool])
-    assert torch.allclose(out[:batch_size], out_ref, rtol=rtol, atol=atol)
+    assert_close(
+        conv_state[conv_state_indices, :],
+        conv_state_ref,
+        exact=True,
+        name="updated causal-conv state",
+    )
+    assert_close(
+        conv_state[unused_states_bool],
+        conv_state_for_padding_test[unused_states_bool],
+        exact=True,
+        name="unused causal-conv state",
+    )
+    assert_close(
+        out[:batch_size],
+        out_ref,
+        tolerance=_causal_conv_update_tolerance(itype),
+        name="causal_conv1d_update",
+        reason="matches the triton-ascend-kernels causal-conv policy",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
@@ -260,9 +289,6 @@ def test_causal_conv1d_update_with_batch_gather(
 def test_causal_conv1d_update_qwen3_next_shape():
     device = "npu"
     itype = torch.bfloat16
-    rtol, atol = (3e-4, 1e-3) if itype == torch.float32 else (3e-3, 5e-3)
-    if itype == torch.bfloat16:
-        rtol, atol = 1e-2, 5e-2
 
     total_tokens = 192
     dim = 4096
@@ -308,7 +334,13 @@ def test_causal_conv1d_update_qwen3_next_shape():
         x_ref[:batch_size].transpose(1, 2), conv_state_ref, weight, bias, activation=activation
     ).transpose(1, 2)
 
-    assert torch.allclose(out[:batch_size], out_ref, rtol=rtol, atol=atol)
+    assert_close(
+        out[:batch_size],
+        out_ref,
+        tolerance=_causal_conv_update_tolerance(itype),
+        name="causal_conv1d_update_qwen3_next",
+        reason="matches the triton-ascend-kernels causal-conv policy",
+    )
 
     gc.collect()
     torch.npu.empty_cache()

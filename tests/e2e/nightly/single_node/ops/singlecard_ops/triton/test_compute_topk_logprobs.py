@@ -1,8 +1,11 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.worker.v2.sample.logprob import compute_topk_logprobs
+
+TOPK_LOGPROBS_TOLERANCE = AccuracyTolerance(rtol=1e-4, atol=1e-4)
 
 
 @pytest.mark.parametrize(
@@ -47,15 +50,22 @@ def test_compute_topk_logprobs(batch_size, vocab_size, num_logprobs):
     ref_ranks = (logits > sampled_logits).sum(dim=1).to(torch.int64)
 
     # ========== 4. Verify results ==========
-    assert torch.equal(triton_output.logprob_token_ids, ref_token_ids), (
-        "Token IDs (Sampled + TopK) do not match between Triton and PyTorch."
+    assert_close(
+        triton_output.logprob_token_ids,
+        ref_token_ids,
+        exact=True,
+        name="compute_topk_logprobs.token_ids",
     )
-
-    assert torch.equal(triton_output.selected_token_ranks, ref_ranks), (
-        f"Token Ranks do not match.\nTriton: {triton_output.selected_token_ranks}\nPyTorch: {ref_ranks}"
+    assert_close(
+        triton_output.selected_token_ranks,
+        ref_ranks,
+        exact=True,
+        name="compute_topk_logprobs.selected_token_ranks",
     )
-
-    assert torch.allclose(triton_output.logprobs, ref_logprobs, rtol=1e-4, atol=1e-4), (
-        f"Logprobs values differ between Triton and PyTorch.\n"
-        f"Max diff: {torch.max(torch.abs(triton_output.logprobs - ref_logprobs))}"
+    assert_close(
+        triton_output.logprobs,
+        ref_logprobs,
+        tolerance=TOPK_LOGPROBS_TOLERANCE,
+        name="compute_topk_logprobs.logprobs",
+        reason="preserve the sampled and top-k log-probability kernel's validated error bound",
     )

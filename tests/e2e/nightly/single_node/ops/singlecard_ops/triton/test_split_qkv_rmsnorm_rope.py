@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.device.device_op import DeviceOperator
 
 MAX_POSITION_EMBEDDINGS = [262144]
@@ -15,8 +16,24 @@ EPS = [1e-6]
 DTYPES = [torch.bfloat16]
 SEEDS = [0]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 5e-2
-DEFAULT_RTOL = 5e-3
+SPLIT_QKV_RMSNORM_ROPE_TOLERANCE = AccuracyTolerance(rtol=5e-3, atol=5e-2)
+
+
+def _assert_split_qkv_rmsnorm_rope_close(
+    actual: torch.Tensor,
+    expected: torch.Tensor,
+    *,
+    policy_dtype: torch.dtype,
+    output_name: str,
+) -> None:
+    assert_close(
+        actual,
+        expected,
+        policy_dtype=policy_dtype,
+        tolerance=SPLIT_QKV_RMSNORM_ROPE_TOLERANCE,
+        name=f"split_qkv_rmsnorm_rope.{output_name}",
+        reason="preserve the fused RMSNorm and RoPE kernel's validated error bound",
+    )
 
 
 def custom_rope(q, k, sin, cos):
@@ -118,12 +135,10 @@ def test_split_qkv_rmsnorm_rope(
     k_gold = k_gold.reshape(num_tokens, -1)
 
     # Compare the results.
-    torch.testing.assert_close(q.to(torch.float32).cpu(), q_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(k.to(torch.float32).cpu(), k_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(
-        v.to(torch.float32).cpu(), v_gold.to(torch.float32), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL
+    _assert_split_qkv_rmsnorm_rope_close(q.to(torch.float32).cpu(), q_gold, policy_dtype=dtype, output_name="q")
+    _assert_split_qkv_rmsnorm_rope_close(k.to(torch.float32).cpu(), k_gold, policy_dtype=dtype, output_name="k")
+    _assert_split_qkv_rmsnorm_rope_close(
+        v.to(torch.float32).cpu(), v_gold.to(torch.float32), policy_dtype=dtype, output_name="v"
     )
 
     gc.collect()
@@ -189,12 +204,10 @@ def test_split_qkv_rmsnorm_rope_with_bias(
     k_gold = k_gold.reshape(num_tokens, -1)
 
     # Compare the results.
-    torch.testing.assert_close(q.to(torch.float32).cpu(), q_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(k.to(torch.float32).cpu(), k_gold, atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL)
-
-    torch.testing.assert_close(
-        v.to(torch.float32).cpu(), v_gold.to(torch.float32), atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL
+    _assert_split_qkv_rmsnorm_rope_close(q.to(torch.float32).cpu(), q_gold, policy_dtype=dtype, output_name="q_bias")
+    _assert_split_qkv_rmsnorm_rope_close(k.to(torch.float32).cpu(), k_gold, policy_dtype=dtype, output_name="k_bias")
+    _assert_split_qkv_rmsnorm_rope_close(
+        v.to(torch.float32).cpu(), v_gold.to(torch.float32), policy_dtype=dtype, output_name="v_bias"
     )
 
     gc.collect()

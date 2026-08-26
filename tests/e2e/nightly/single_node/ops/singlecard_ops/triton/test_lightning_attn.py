@@ -46,6 +46,7 @@ import pytest
 import torch
 from einops import rearrange
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.mamba.lightning_attn import (
     AscendLightningAttentionKernel,
     lightning_attention_npu,
@@ -74,8 +75,10 @@ KV_BLOCK_SIZE = 64
 TEST_INPUT_SCALE = 0.02
 TEST_DECAY_SCALE = 0.02
 SEMANTIC_INPUT_SCALE = 0.05
-FLOAT32_TOLERANCE = (1e-2, 1e-2)
-LOW_PRECISION_TOLERANCE = (5e-2, 5e-2)
+FLOAT32_TOLERANCE = AccuracyTolerance(rtol=1e-2, atol=1e-2)
+LOW_PRECISION_TOLERANCE = AccuracyTolerance(rtol=5e-2, atol=5e-2)
+CAUSAL_PROPERTY_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-5)
+DECAY_EFFECT_TOLERANCE = AccuracyTolerance(rtol=1e-3, atol=1e-3)
 
 
 def _round_like_kernel_store(x, dtype):
@@ -320,15 +323,15 @@ def _naive_jit_linear_forward_prefix(q, k, v, kv_caches, slope_rate, block_size,
 
 
 # ---------------------------------------------------------------------------
-# Tolerance helpers
+# AccuracyTolerance helpers
 # ---------------------------------------------------------------------------
 
 
-def _get_tolerances(dtype):
-    """Return (rtol, atol) appropriate for the given dtype."""
+def _get_tolerance(dtype: torch.dtype) -> AccuracyTolerance:
+    """Return the validated Lightning Attention tolerance for ``dtype``."""
     if dtype == torch.float32:
         return FLOAT32_TOLERANCE
-    elif dtype in (torch.float16, torch.bfloat16):
+    if dtype in (torch.float16, torch.bfloat16):
         return LOW_PRECISION_TOLERANCE
     return FLOAT32_TOLERANCE
 
@@ -369,7 +372,7 @@ def test_lightning_attention_npu_single_chunk(b, h, n, d, e, dtype):
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((b, h, n, d), dtype, device)
     k = _randn((b, h, n, d), dtype, device)
@@ -383,11 +386,13 @@ def test_lightning_attention_npu_single_chunk(b, h, n, d, e, dtype):
     o_triton, kv_triton = lightning_attention_npu_(q, k, v, ed, kv_history.clone())
     o_ref, _ = _naive_triton_lightning_attention(q, k, v, ed, kv_history)
 
-    torch.testing.assert_close(
+    assert_close(
         o_triton.float().cpu(),
         o_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu_ output",
+        reason="preserves the existing dtype-specific bounds for tiled attention accumulation",
     )
     assert kv_triton.shape == (b, h, (n + BLOCK_SIZE - 1) // BLOCK_SIZE + 1, d, e)
 
@@ -411,7 +416,7 @@ def test_lightning_attention_npu_single_chunk_with_kv_history(b, h, n, d, e, dty
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((b, h, n, d), dtype, device)
     k = _randn((b, h, n, d), dtype, device)
@@ -422,17 +427,21 @@ def test_lightning_attention_npu_single_chunk_with_kv_history(b, h, n, d, e, dty
     o_triton, kv_triton = lightning_attention_npu_(q, k, v, ed, kv_history.clone())
     o_ref, kv_ref = _naive_triton_lightning_attention(q, k, v, ed, kv_history)
 
-    torch.testing.assert_close(
+    assert_close(
         o_triton.float().cpu(),
         o_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu_ output with KV history",
+        reason="preserves the existing dtype-specific bounds for tiled attention accumulation",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_triton[:, :, -1, :, :].cpu(),
         kv_ref[:, :, -1, :, :].cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu_ final KV state",
+        reason="preserves the existing dtype-specific bounds for the recurrent KV reduction",
     )
 
     gc.collect()
@@ -468,7 +477,7 @@ def test_lightning_attention_npu_multi_block(b, h, n, d, e, dtype):
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((b, h, n, d), dtype, device)
     k = _randn((b, h, n, d), dtype, device)
@@ -481,17 +490,21 @@ def test_lightning_attention_npu_multi_block(b, h, n, d, e, dtype):
     o_triton, kv_triton = lightning_attention_npu_(q, k, v, ed, kv_history.clone())
     o_ref, kv_ref = _naive_triton_lightning_attention(q, k, v, ed, kv_history)
 
-    torch.testing.assert_close(
+    assert_close(
         o_triton.float().cpu(),
         o_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu_ multi-block output",
+        reason="preserves the existing dtype-specific bounds for multi-block accumulation",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_triton[:, :, -1, :, :].cpu(),
         kv_ref[:, :, -1, :, :].cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu_ multi-block KV state",
+        reason="preserves the existing dtype-specific bounds for the recurrent KV reduction",
     )
 
     # Also verify the output is well-formed
@@ -529,7 +542,7 @@ def test_lightning_attention_npu(b, h, n, d, e, dtype):
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((b, h, n, d), dtype, device)
     k = _randn((b, h, n, d), dtype, device)
@@ -542,17 +555,21 @@ def test_lightning_attention_npu(b, h, n, d, e, dtype):
     # Naive reference output
     o_ref, kv_ref = _naive_lightning_attention_npu(q, k, v, ed, block_size=256, kv_history=None)
 
-    torch.testing.assert_close(
+    assert_close(
         o_triton.float().cpu(),
         o_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu output",
+        reason="preserves the existing dtype-specific bounds across head-dimension chunks",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_triton[:, :, -1, :, :].cpu(),
         kv_ref[:, :, -1, :, :].cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu final KV state",
+        reason="preserves the existing dtype-specific bounds for the recurrent KV reduction",
     )
 
     gc.collect()
@@ -576,7 +593,7 @@ def test_lightning_attention_npu_with_kv_history(b, h, n, d, e, dtype):
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((b, h, n, d), dtype, device)
     k = _randn((b, h, n, d), dtype, device)
@@ -587,17 +604,21 @@ def test_lightning_attention_npu_with_kv_history(b, h, n, d, e, dtype):
     o_triton, kv_triton = lightning_attention_npu(q, k, v, ed, block_size=256, kv_history=kv_history.clone())
     o_ref, kv_ref = _naive_lightning_attention_npu(q, k, v, ed, block_size=256, kv_history=kv_history)
 
-    torch.testing.assert_close(
+    assert_close(
         o_triton.float().cpu(),
         o_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu output with KV history",
+        reason="preserves the existing dtype-specific bounds across head-dimension chunks",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_triton[:, :, -1, :, :].cpu(),
         kv_ref[:, :, -1, :, :].cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="lightning_attention_npu KV state with history",
+        reason="preserves the existing dtype-specific bounds for the recurrent KV reduction",
     )
 
     gc.collect()
@@ -628,7 +649,7 @@ def test_ascend_lightning_attention_kernel_prefix(h, n, d, e, dtype):
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     # jit_linear_forward_prefix receives one sequence in [h, n, d] layout.
     q = _randn((h, n, d), dtype, device)
@@ -647,17 +668,21 @@ def test_ascend_lightning_attention_kernel_prefix(h, n, d, e, dtype):
     # Naive reference output
     out_ref, kv_caches_ref = _naive_jit_linear_forward_prefix(q, k, v, kv_caches, slope_rate, block_size=256)
 
-    torch.testing.assert_close(
+    assert_close(
         out_triton.float().cpu(),
         out_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="jit_linear_forward_prefix output",
+        reason="preserves the existing dtype-specific bounds for the public prefix path",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_caches_triton.cpu(),
         kv_caches_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="jit_linear_forward_prefix KV cache",
+        reason="preserves the existing dtype-specific bounds for the in-place KV cache update",
     )
 
     gc.collect()
@@ -681,7 +706,7 @@ def test_ascend_lightning_attention_kernel_prefix_with_history(h, n, d, e, dtype
     torch.manual_seed(42)
     init_device_properties_triton()
     device = "npu"
-    rtol, atol = _get_tolerances(dtype)
+    tolerance = _get_tolerance(dtype)
 
     q = _randn((h, n, d), dtype, device)
     k = _randn((h, n, d), dtype, device)
@@ -696,17 +721,21 @@ def test_ascend_lightning_attention_kernel_prefix_with_history(h, n, d, e, dtype
 
     out_ref, kv_caches_ref = _naive_jit_linear_forward_prefix(q, k, v, kv_caches, slope_rate, block_size=256)
 
-    torch.testing.assert_close(
+    assert_close(
         out_triton.float().cpu(),
         out_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="jit_linear_forward_prefix output with KV history",
+        reason="preserves the existing dtype-specific bounds for the public prefix path",
     )
-    torch.testing.assert_close(
+    assert_close(
         kv_caches_triton.cpu(),
         kv_caches_ref.cpu(),
-        rtol=rtol,
-        atol=atol,
+        policy_dtype=dtype,
+        tolerance=tolerance,
+        name="jit_linear_forward_prefix KV cache with history",
+        reason="preserves the existing dtype-specific bounds for the in-place KV cache update",
     )
 
     gc.collect()
@@ -859,11 +888,12 @@ def test_lightning_attention_causal_property():
     o_scrambled, _ = lightning_attention_npu_(q, k, v_scrambled, ed, kv_history.clone())
 
     # Output at positions 0..49 should be unchanged
-    torch.testing.assert_close(
-        o_orig[:, :, :50, :].cpu(),
+    assert_close(
         o_scrambled[:, :, :50, :].cpu(),
-        rtol=1e-5,
-        atol=1e-5,
+        o_orig[:, :, :50, :].cpu(),
+        tolerance=CAUSAL_PROPERTY_TOLERANCE,
+        name="lightning_attention_npu_ causal prefix",
+        reason="preserves the existing tight bound for an output prefix unaffected by future values",
     )
 
     gc.collect()
@@ -912,17 +942,19 @@ def test_lightning_attention_decay_effect():
     o_ref_small, _ = _naive_triton_lightning_attention(q, k, v, ed_small, kv_history)
     o_ref_large, _ = _naive_triton_lightning_attention(q, k, v, ed_large, kv_history)
 
-    torch.testing.assert_close(
+    assert_close(
         o_small.cpu(),
         o_ref_small.cpu(),
-        rtol=1e-3,
-        atol=1e-3,
+        tolerance=DECAY_EFFECT_TOLERANCE,
+        name="lightning_attention_npu_ small-decay output",
+        reason="preserves the existing semantic-test bound for a slow decay rate",
     )
-    torch.testing.assert_close(
+    assert_close(
         o_large.cpu(),
         o_ref_large.cpu(),
-        rtol=1e-3,
-        atol=1e-3,
+        tolerance=DECAY_EFFECT_TOLERANCE,
+        name="lightning_attention_npu_ large-decay output",
+        reason="preserves the existing semantic-test bound for a fast decay rate",
     )
 
     gc.collect()

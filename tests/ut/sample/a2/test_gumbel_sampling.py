@@ -10,9 +10,12 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.worker.v2.sample.gumbel import apply_temperature, gumbel_sample
 
 DEVICE = "npu"
+_APPLY_TEMPERATURE_TOLERANCE = AccuracyTolerance(rtol=1e-5, atol=1e-4)
+_PROCESSED_LOGITS_TOLERANCE = AccuracyTolerance(rtol=1e-4, atol=1e-4)
 
 
 def _ref_apply_temperature(
@@ -58,8 +61,12 @@ class TestGumbelSampling:
 
         logits_ref = _ref_apply_temperature(logits, expanded_idx_mapping, temperature)
 
-        assert torch.allclose(logits_triton.float(), logits_ref, atol=1e-4, rtol=1e-5), (
-            f"apply_temperature mismatch: max_diff={(logits_triton.float() - logits_ref).abs().max().item():.6f}"
+        assert_close(
+            logits_triton.float(),
+            logits_ref,
+            tolerance=_APPLY_TEMPERATURE_TOLERANCE,
+            name="gumbel apply_temperature",
+            reason="Preserve the kernel's existing accumulation tolerance.",
         )
 
     def test_apply_temperature_skip_zero_and_one(self):
@@ -75,7 +82,7 @@ class TestGumbelSampling:
         apply_temperature(logits, expanded_idx_mapping, temperature)
         torch.npu.synchronize()
 
-        assert torch.equal(logits, original), "Logits changed for temp=0.0 or temp=1.0"
+        assert_close(logits, original, exact=True, name="gumbel temperature zero/one no-op")
 
     @pytest.mark.parametrize(
         "num_tokens,num_reqs,vocab_size",
@@ -99,9 +106,7 @@ class TestGumbelSampling:
         torch.npu.synchronize()
 
         expected = logits.argmax(dim=-1)
-        assert torch.equal(sampled, expected), (
-            f"Greedy mismatch: sampled={sampled.tolist()} expected={expected.tolist()}"
-        )
+        assert_close(sampled, expected, exact=True, name="gumbel greedy token IDs")
 
     def test_gumbel_sample_greedy_apply_temp_flag_irrelevant(self):
         """With temp=0, apply_temperature flag should not affect result (both greedy)."""
@@ -118,8 +123,8 @@ class TestGumbelSampling:
         torch.npu.synchronize()
 
         expected = logits.argmax(dim=-1)
-        assert torch.equal(s_false, expected)
-        assert torch.equal(s_true, expected)
+        assert_close(s_false, expected, exact=True, name="gumbel greedy token IDs without scaling")
+        assert_close(s_true, expected, exact=True, name="gumbel greedy token IDs with scaling")
 
     @pytest.mark.parametrize(
         "num_tokens,num_reqs,vocab_size",
@@ -143,7 +148,7 @@ class TestGumbelSampling:
         r2 = gumbel_sample(logits, expanded_idx_mapping, temperature, seed, pos, apply_temperature=False)
         torch.npu.synchronize()
 
-        assert torch.equal(r1, r2), "gumbel_sample is non-deterministic with same seed"
+        assert_close(r2, r1, exact=True, name="gumbel same-seed determinism")
 
     def test_gumbel_sample_different_seeds(self):
         """Different seeds must (almost surely) produce different results."""
@@ -282,9 +287,7 @@ class TestGumbelSampling:
         torch.npu.synchronize()
 
         expected = logits.argmax(dim=-1)
-        assert torch.equal(sampled, expected), (
-            f"Expanded mapping greedy mismatch: {sampled.tolist()} vs {expected.tolist()}"
-        )
+        assert_close(sampled, expected, exact=True, name="gumbel expanded-mapping token IDs")
 
     def test_gumbel_sample_shared_seed_same_request(self):
         """Tokens mapping to the same request share seed, so with same pos they
@@ -339,9 +342,12 @@ class TestGumbelSampling:
             req = expanded_idx_mapping[tok].item()
             temp = temperature[req].item()
             expected = logits[tok].float() / temp
-            assert torch.allclose(out_logits[req].float(), expected, atol=1e-4, rtol=1e-4), (
-                f"processed_logits mismatch at token {tok} (req {req}, temp={temp:.3f}): "
-                f"max_diff={(out_logits[req].float() - expected).abs().max().item():.6f}"
+            assert_close(
+                out_logits[req].float(),
+                expected,
+                tolerance=_PROCESSED_LOGITS_TOLERANCE,
+                name=f"gumbel processed logits with temperature (token={tok}, request={req})",
+                reason="Preserve the processed-logits kernel's existing tolerance.",
             )
 
     def test_gumbel_sample_apply_temperature_false_nonzero(self):
@@ -372,9 +378,12 @@ class TestGumbelSampling:
             req = expanded_idx_mapping[tok].item()
             # Without temperature application, stored logits should match raw logits
             expected = logits[tok].float()
-            assert torch.allclose(out_logits[req].float(), expected, atol=1e-4, rtol=1e-4), (
-                f"processed_logits should be raw logits when apply_temperature=False: "
-                f"max_diff={(out_logits[req].float() - expected).abs().max().item():.6f}"
+            assert_close(
+                out_logits[req].float(),
+                expected,
+                tolerance=_PROCESSED_LOGITS_TOLERANCE,
+                name=f"gumbel processed raw logits (token={tok}, request={req})",
+                reason="Preserve the processed-logits kernel's existing tolerance.",
             )
 
     def test_gumbel_sample_processed_logits_req_state_idx(self):
@@ -414,15 +423,24 @@ class TestGumbelSampling:
             temp = temperature[req].item()
             expected = logits[tok].float() / temp
             actual = out_logits[req]
-            assert torch.allclose(actual.float(), expected, atol=1e-4, rtol=1e-4), (
-                f"Req {req} (tok={tok}, temp={temp:.3f}): max_diff={(actual.float() - expected).abs().max().item():.6f}"
+            assert_close(
+                actual.float(),
+                expected,
+                tolerance=_PROCESSED_LOGITS_TOLERANCE,
+                name=f"gumbel request-state processed logits (token={tok}, request={req})",
+                reason="Preserve the processed-logits kernel's existing tolerance.",
             )
 
         # Also verify that unused request slots remain zero
         used_reqs = set(expanded_idx_mapping.tolist())
         for req in range(max_num_reqs):
             if req not in used_reqs:
-                assert (out_logits[req] == 0).all(), f"Unused request slot {req} should be all zeros"
+                assert_close(
+                    out_logits[req],
+                    torch.zeros_like(out_logits[req]),
+                    exact=True,
+                    name=f"gumbel unused request slot {req}",
+                )
 
     def test_gumbel_sample_processed_logits_col(self):
         """output_processed_logits_col selects which column (draft step) to write.
@@ -464,12 +482,26 @@ class TestGumbelSampling:
             expected = logits[tok].float() / temp
             # Data should be at draft_logits[req, 1, :]  (column 1)
             actual = draft_logits[req, 1, :]
-            assert torch.allclose(actual.float(), expected, atol=1e-4, rtol=1e-4), (
-                f"Token {tok} at col=1: mismatch, max_diff={(actual.float() - expected).abs().max().item():.6f}"
+            assert_close(
+                actual.float(),
+                expected,
+                tolerance=_PROCESSED_LOGITS_TOLERANCE,
+                name=f"gumbel processed logits column (token={tok}, request={req})",
+                reason="Preserve the processed-logits kernel's existing tolerance.",
             )
             # Column 0 and 2 should be untouched (zeros)
-            assert (draft_logits[req, 0, :] == 0).all(), f"Col 0 should be zeros for req {req}"
-            assert (draft_logits[req, 2, :] == 0).all(), f"Col 2 should be zeros for req {req}"
+            assert_close(
+                draft_logits[req, 0, :],
+                torch.zeros_like(draft_logits[req, 0, :]),
+                exact=True,
+                name=f"gumbel untouched column 0 request {req}",
+            )
+            assert_close(
+                draft_logits[req, 2, :],
+                torch.zeros_like(draft_logits[req, 2, :]),
+                exact=True,
+                name=f"gumbel untouched column 2 request {req}",
+            )
 
     def test_gumbel_sample_processed_logits_mixed_temp(self):
         """Processed logits with mixed temperature (1:1 token-to-request mapping):
@@ -512,8 +544,12 @@ class TestGumbelSampling:
             else:
                 expected = logits[tok].float() / temp
             actual = out_logits[req]
-            assert torch.allclose(actual.float(), expected, atol=1e-4, rtol=1e-4), (
-                f"Req {req} (tok={tok}, temp={temp:.3f}): max_diff={(actual.float() - expected).abs().max().item():.6f}"
+            assert_close(
+                actual.float(),
+                expected,
+                tolerance=_PROCESSED_LOGITS_TOLERANCE,
+                name=f"gumbel mixed-temperature processed logits (token={tok}, request={req})",
+                reason="Preserve the processed-logits kernel's existing tolerance.",
             )
 
     def test_gumbel_sample_single_token(self):
@@ -546,7 +582,7 @@ class TestGumbelSampling:
         torch.npu.synchronize()
 
         expected = logits.argmax(dim=-1)
-        assert torch.equal(sampled, expected), "Large vocab greedy mismatch"
+        assert_close(sampled, expected, exact=True, name="gumbel large-vocabulary token IDs")
 
     def test_gumbel_sample_extreme_temperatures(self):
         """Very low and very high temperatures should not crash."""

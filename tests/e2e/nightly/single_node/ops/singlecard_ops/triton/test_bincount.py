@@ -2,6 +2,7 @@ import pytest
 import torch
 from vllm.triton_utils import triton
 
+from tests.accuracy import assert_close
 from vllm_ascend.worker.v2.sample.penalties import _bincount_kernel
 
 
@@ -112,14 +113,5 @@ def test_bincount_kernel():
     )
 
     # ========== Verify results ==========
-    assert torch.equal(prompt_bin_mask, ref_prompt_bin_mask), (
-        f"prompt_bin_mask triton output differs from torch reference.\n"
-        f"Max diff: {torch.max(torch.abs(prompt_bin_mask - ref_prompt_bin_mask))}\n"
-        f"Mean diff: {torch.mean(torch.abs(prompt_bin_mask - ref_prompt_bin_mask))}"
-    )
-
-    assert torch.equal(output_bin_counts, ref_output_bin_counts), (
-        f"output_bin_counts triton output differs from torch reference.\n"
-        f"Max diff: {torch.max(torch.abs(output_bin_counts - ref_output_bin_counts))}\n"
-        f"Mean diff: {torch.mean(torch.abs(output_bin_counts - ref_output_bin_counts))}"
-    )
+    assert_close(prompt_bin_mask, ref_prompt_bin_mask, exact=True, name="prompt bin mask")
+    assert_close(output_bin_counts, ref_output_bin_counts, exact=True, name="output bin counts")

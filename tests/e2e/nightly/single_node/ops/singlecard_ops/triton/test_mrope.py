@@ -4,6 +4,7 @@ import pytest
 import torch
 from vllm.model_executor.layers.rotary_embedding.mrope import triton_mrope
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
 MROPE_SECTION = [[32, 32, 32]]
@@ -15,8 +16,6 @@ NUM_K_HEADS = [1]
 NUM_TOKENS = [1, 4, 8, 16]
 SEEDS = [0]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 1e-3
-DEFAULT_RTOL = 1e-3
 
 
 def pytorch_forward_native(q, k, cos, sin, mrope_section, head_size, rotary_dim, mrope_interleaved):
@@ -153,14 +152,26 @@ def test_mrotary_embedding_triton_kernel(
     q_trt, k_trt = triton_mrope(q_trt, k_trt, cos, sin, mrope_section, head_size, rotary_dim, True)
 
     q_gold, k_gold = pytorch_forward_native(q_gold, k_gold, cos, sin, mrope_section, head_size, rotary_dim, True)
-    atol = DEFAULT_ATOL
-    rtol = DEFAULT_RTOL
-    if dtype == torch.bfloat16:
-        atol = 1e-02
-        rtol = 1e-02
+    tolerance = (
+        AccuracyTolerance(rtol=1e-2, atol=1e-2)
+        if dtype == torch.bfloat16
+        else AccuracyTolerance(rtol=1e-3, atol=1e-3)
+    )
     # Compare the results.
-    torch.testing.assert_close(q_trt.view(q_gold.size()), q_gold, atol=atol, rtol=rtol)
-    torch.testing.assert_close(k_trt.view(k_gold.size()), k_gold, atol=atol, rtol=rtol)
+    assert_close(
+        q_trt.view(q_gold.size()),
+        q_gold,
+        tolerance=tolerance,
+        name="mrope query",
+        reason="preserves the validated rotary-embedding bounds",
+    )
+    assert_close(
+        k_trt.view(k_gold.size()),
+        k_gold,
+        tolerance=tolerance,
+        name="mrope key",
+        reason="preserves the validated rotary-embedding bounds",
+    )
     gc.collect()
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()

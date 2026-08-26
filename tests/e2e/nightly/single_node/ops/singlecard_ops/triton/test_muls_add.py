@@ -1,8 +1,11 @@
 import pytest
 import torch
 
+from tests.accuracy import AccuracyTolerance, assert_close
 from vllm_ascend.ops.triton.muls_add import muls_add_triton
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+MULS_ADD_TOLERANCE = AccuracyTolerance(rtol=1e-3, atol=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -26,8 +29,12 @@ def test_muls_add_triton_correctness(shape, dtype, scale):
     out_triton = muls_add_triton(x, y, scale)
     out_ref = x * scale + y
 
-    rtol, atol = 1e-3, 1e-3
-
     assert out_triton.shape == out_ref.shape
     assert out_triton.dtype == out_ref.dtype
-    assert torch.allclose(out_triton, out_ref, rtol=rtol, atol=atol)
+    assert_close(
+        out_triton,
+        out_ref,
+        tolerance=MULS_ADD_TOLERANCE,
+        name=f"muls_add.{dtype}",
+        reason="preserve the elementwise multiply-add kernel's validated low-precision error bound",
+    )

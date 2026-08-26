@@ -4,6 +4,7 @@ import pytest
 import torch
 from vllm.triton_utils import HAS_TRITON, triton
 
+from tests.accuracy import assert_close
 from vllm_ascend.ops.triton.dsa_cp import build_local_metadata_triton
 
 MAX_NUM_SEQS = 1024
@@ -11,8 +12,6 @@ NUM_REQS_LIST = [1, 7, 32, 1024]
 TP_SIZES = [1, 8]
 SEEDS = [0]
 DEVICES = [f"npu:{0}"]
-DEFAULT_ATOL = 0
-DEFAULT_RTOL = 0
 
 
 def _run_native(
@@ -132,25 +131,25 @@ def test_build_local_metadata_triton(
             compute_start_pos=compute_start_pos,
         )
 
-        torch.testing.assert_close(
+        assert_close(
             trt_qsl[: num_reqs + 1],
             ref_qsl[: num_reqs + 1],
-            atol=DEFAULT_ATOL,
-            rtol=DEFAULT_RTOL,
+            exact=True,
+            name="local query start locations",
         )
-        torch.testing.assert_close(
+        assert_close(
             trt_sl[:num_reqs],
             ref_sl[:num_reqs],
-            atol=DEFAULT_ATOL,
-            rtol=DEFAULT_RTOL,
+            exact=True,
+            name="local sequence lengths",
         )
         if compute_start_pos:
             assert trt_sp is not None and ref_sp is not None
-            torch.testing.assert_close(
+            assert_close(
                 trt_sp[:num_reqs],
                 ref_sp[:num_reqs],
-                atol=DEFAULT_ATOL,
-                rtol=DEFAULT_RTOL,
+                exact=True,
+                name="local start positions",
             )
         else:
             assert trt_sp is None and ref_sp is None
@@ -203,17 +202,17 @@ def test_build_local_metadata_triton_masks_graph_padding(device: str) -> None:
         compute_start_pos=False,
     )
 
-    torch.testing.assert_close(
+    assert_close(
         trt_qsl[: num_reqs + 1],
         ref_qsl[: num_reqs + 1],
-        atol=DEFAULT_ATOL,
-        rtol=DEFAULT_RTOL,
+        exact=True,
+        name="padded local query start locations",
     )
-    torch.testing.assert_close(
+    assert_close(
         trt_sl[:num_reqs],
         ref_sl[:num_reqs],
-        atol=DEFAULT_ATOL,
-        rtol=DEFAULT_RTOL,
+        exact=True,
+        name="padded local sequence lengths",
     )
     assert ref_sl[17].item() == 0
     assert torch.all(trt_sl[:num_reqs] >= 0)
