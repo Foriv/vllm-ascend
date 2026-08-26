@@ -6,6 +6,7 @@ import torch_npu
 
 from vllm_ascend.utils import enable_custom_op
 
+torch.npu.config.allow_internal_format = True
 enable_custom_op()
 
 
