@@ -176,6 +176,13 @@ class AscendConfig:
             "VLLM_ASCEND_ENABLE_MLAPO",
             ascend_envs.VLLM_ASCEND_ENABLE_MLAPO,
         )
+        # Opt-in: use the SFA PROLOG_V3 fused decode preprocessing outside PD
+        # KV-consumer workers (plain serving). Decode steps take the single
+        # npu_mla_prolog_v3 op instead of the per-layer NATIVE K chain, while
+        # prefill keeps the NATIVE path. The original qkv_a/q_b weights are
+        # retained for that fallback, so this trades extra NPU weight memory
+        # for decode kernel savings.
+        self.enable_sfa_prolog_v3 = additional_config.get("enable_sfa_prolog_v3", False)
         self.msmonitor_use_daemon = self._get_config_value(
             additional_config,
             "msmonitor_use_daemon",

@@ -22,6 +22,7 @@ from vllm_ascend.attention.sfa_v1 import (
     AscendSFAMetadataBuilder,
     PreprocessType,
     _is_mtp_layer,
+    _int64_kv_slots,
     custom_kv_rmsnorm_rope,
 )
 from vllm_ascend.attention.utils import get_sfa_qsfa_packed_head_dim
@@ -458,6 +459,73 @@ class TestAscendSFAKVQuantSparseAttention(TestBase):
         self.assertEqual(call_kwargs["quant_scale_repo_mode"], 1)
 
 
+class TestAscendSFAKPathFusion(TestBase):
+    """K-path fusions: per-step int64 slot conversion.
+
+    Note: the indexer GEMM-reuse tests from the upstream PR are not ported —
+    this base's indexer.py predates the wk_weights_proj/forward_k structure
+    they target.
+    """
+
+    def test_int64_kv_slots_passthrough_for_int64_input(self):
+        slots = torch.arange(4, dtype=torch.int64)
+        metadata = SimpleNamespace()
+
+        self.assertIs(_int64_kv_slots(slots, metadata), slots)
+
+    def test_int64_kv_slots_converts_and_caches_per_metadata(self):
+        slots = torch.arange(4, dtype=torch.int32).view(-1, 1)
+        metadata = SimpleNamespace()
+
+        converted = _int64_kv_slots(slots, metadata)
+        self.assertEqual(converted.dtype, torch.int64)
+        self.assertTrue(torch.equal(converted, slots.to(torch.int64)))
+
+        # The same slot tensor must return the cached conversion instead of
+        # re-casting (one Cast kernel per step instead of one per layer).
+        again = _int64_kv_slots(slots, metadata)
+        self.assertIs(again, converted)
+
+        # A different slot tensor on the same metadata re-converts.
+        new_slots = torch.arange(4, 8, dtype=torch.int32).view(-1, 1)
+        new_converted = _int64_kv_slots(new_slots, metadata)
+        self.assertIsNot(new_converted, converted)
+        self.assertTrue(torch.equal(new_converted, new_slots.to(torch.int64)))
+
+        # A fresh metadata object (new scheduling step) re-converts.
+        fresh_converted = _int64_kv_slots(slots, SimpleNamespace())
+        self.assertIsNot(fresh_converted, converted)
+        self.assertTrue(torch.equal(fresh_converted, converted))
+
+    @patch("vllm_ascend.attention.sfa_v1.torch_npu.npu_kv_rmsnorm_rope_cache", create=True)
+    def test_exec_kv_reuses_int64_slots_across_layers(self, mock_kv_cache_op):
+        impl = AscendSFAImpl.__new__(AscendSFAImpl)
+        impl.enable_sparse_sfa_c8 = False
+        impl.enable_dsa_cp = False
+        impl.num_kv_heads = 1
+        impl.kv_lora_rank = 128
+        impl.qk_rope_head_dim = 64
+        impl.kv_a_layernorm = MagicMock()
+        impl.kv_a_layernorm.weight = torch.ones(128)
+        impl.kv_a_layernorm.variance_epsilon = 1e-6
+
+        kv_no_split = torch.randn(2, 128 + 64)
+        cos = torch.randn(2, 64)
+        sin = torch.randn(2, 64)
+        kv_cache = (torch.zeros(128, 128), torch.zeros(128, 64))
+        slots = torch.arange(2, dtype=torch.int32)
+        metadata = SimpleNamespace()
+
+        impl.exec_kv(kv_no_split, cos, sin, kv_cache, slots, metadata)
+        impl.exec_kv(kv_no_split, cos, sin, kv_cache, slots, metadata)
+
+        self.assertEqual(mock_kv_cache_op.call_count, 2)
+        first_slots = mock_kv_cache_op.call_args_list[0].args[4]
+        second_slots = mock_kv_cache_op.call_args_list[1].args[4]
+        self.assertEqual(first_slots.dtype, torch.int64)
+        self.assertIs(first_slots, second_slots)
+
+
 class TestAscendSFAMetadata(TestBase):
     def test_ascend_sfa_metadata_default(self):
         num_actual_tokens = 100
@@ -820,6 +888,7 @@ class TestAscendSFAImpl(TestBase):
         mock_ascend_config.enable_mlapo = False
         mock_ascend_config.enable_sparse_sfa_c8 = False
         mock_ascend_config.enable_sparse_li_c8 = False
+        mock_ascend_config.enable_sfa_prolog_v3 = False
         mock_ascend_config.enable_shared_expert_dp = False
         mock_ascend_config.is_sparse_li_c8_layer.return_value = False
         mock_get_ascend_config.return_value = mock_ascend_config
@@ -959,6 +1028,15 @@ class TestAscendSFAImpl(TestBase):
     def test_process_weights_for_fused_prolog_v3_unquantized(self):
         self._run_prolog_v3_weight_test(None, False)
 
+    @patch("vllm_ascend.attention.sfa_v1.dispose_layer")
+    def test_process_weights_prolog_v3_keeps_weights_non_pd(self, mock_dispose):
+        """Non-PD opt-in must keep the original qkv_a/q_b weights: prefill
+        still runs the NATIVE path and consumes them."""
+        self.impl.is_kv_consumer = False
+        self._run_prolog_v3_weight_test(AscendW8A8MXFP8DynamicLinearMethod, True)
+
+        mock_dispose.assert_not_called()
+
     # ============ exec_kv: sparse C8 uses custom_kv_rmsnorm_rope ============
 
     @patch("vllm_ascend.attention.sfa_v1.custom_kv_rmsnorm_rope")
@@ -1075,6 +1153,46 @@ class TestAscendSFAImpl(TestBase):
 
         path = self.impl._resolve_preprocess_type(torch.bfloat16)
         self.assertEqual(path, PreprocessType.PROLOG_V3)
+
+    def test_resolve_path_non_pd_opt_in_w8a8dynamic_c8_goes_prolog_v3(self):
+        """Non-PD + enable_sfa_prolog_v3 + W8A8Dynamic + C8 -> PROLOG_V3."""
+        self._set_quant(AscendW8A8DynamicLinearMethod)
+        self.impl.is_kv_consumer = False
+        self.impl.enable_sfa_prolog_v3 = True
+        self.impl.enable_sparse_sfa_c8 = True
+
+        path = self.impl._resolve_preprocess_type(torch.bfloat16)
+        self.assertEqual(path, PreprocessType.PROLOG_V3)
+
+    def test_resolve_path_non_pd_default_stays_native(self):
+        """Non-PD without the opt-in keeps the NATIVE path (default off)."""
+        self._set_quant(AscendW8A8DynamicLinearMethod)
+        self.impl.is_kv_consumer = False
+        self.impl.enable_sfa_prolog_v3 = False
+        self.impl.enable_sparse_sfa_c8 = True
+
+        path = self.impl._resolve_preprocess_type(torch.bfloat16)
+        self.assertEqual(path, PreprocessType.NATIVE)
+
+    def test_resolve_path_non_pd_opt_in_mxfp_goes_prolog_v3(self):
+        """Non-PD + opt-in + MXFP -> PROLOG_V3."""
+        self._set_quant(AscendW8A8MXFP8DynamicLinearMethod)
+        self.impl.is_kv_consumer = False
+        self.impl.enable_sfa_prolog_v3 = True
+
+        path = self.impl._resolve_preprocess_type(torch.bfloat16)
+        self.assertEqual(path, PreprocessType.PROLOG_V3)
+
+    def test_resolve_path_non_pd_opt_in_unquantized_stays_native(self):
+        """Non-PD opt-in requires a quantized fused_qkv_a_proj: the
+        unquantized weight preparation transposes fused_qkv_a_proj.weight
+        in place, which the NATIVE prefill fallback still consumes."""
+        self._set_quant(None)
+        self.impl.is_kv_consumer = False
+        self.impl.enable_sfa_prolog_v3 = True
+
+        path = self.impl._resolve_preprocess_type(torch.bfloat16)
+        self.assertEqual(path, PreprocessType.NATIVE)
 
     # ============ _get_fused_type_unsupported_reasons ============
 
