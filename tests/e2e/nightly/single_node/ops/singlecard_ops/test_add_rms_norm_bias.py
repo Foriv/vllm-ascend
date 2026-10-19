@@ -5,6 +5,14 @@ import numpy as np
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="Legacy AddRmsNormBias reference targets A2/A3; A5 has a separate reference",
+)
+
 seed = 45
 random.seed(seed)
 np.random.seed(seed)

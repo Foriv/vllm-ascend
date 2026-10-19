@@ -1,9 +1,17 @@
 import pytest
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
 torch = pytest.importorskip("torch")
 torch_npu = pytest.importorskip("torch_npu")
 
 from vllm_ascend.utils import enable_custom_op  # noqa: E402
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() != AscendDeviceType.A3,
+    reason="Sparse KV offload native bindings are built only for Ascend A3",
+)
 
 ROWS = 4
 TOPK = 8

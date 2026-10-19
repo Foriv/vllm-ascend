@@ -7,9 +7,17 @@ from dataclasses import dataclass, replace
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
 torch_npu = pytest.importorskip("torch_npu")
 
 from vllm_ascend.utils import enable_custom_op  # noqa: E402
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="The local fused LIM kernel is configured for Ascend A2/A3",
+)
 
 enable_custom_op()
 

@@ -5,6 +5,14 @@ import pytest
 import torch
 import torch_npu
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A3, AscendDeviceType.A5),
+    reason="AttnResFwd is configured for Ascend A3/A5",
+)
+
 
 def cpu_reference(prefix, addend, blocks, projection, gamma, valid, output_gamma, epsilon, mix):
     raw = (prefix.cpu() + addend.cpu()) if addend is not None else prefix.cpu()

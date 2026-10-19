@@ -20,6 +20,8 @@ import pytest
 import torch
 import torch_npu  # noqa: F401
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import bootstrap_custom_op_env
 
 bootstrap_custom_op_env(include_vendor_lib=True)
@@ -27,7 +29,13 @@ import vllm_ascend.vllm_ascend_C  # type: ignore[import-untyped]  # noqa: F401,E
 
 OP = torch.ops._C_ascend.dequant_situ_quant
 
-pytestmark = pytest.mark.skipif(not torch.npu.is_available(), reason="requires an available NPU")
+pytestmark = [
+    pytest.mark.skipif(not torch.npu.is_available(), reason="requires an available NPU"),
+    pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="DequantSituQuant is configured for Ascend A2/A3",
+    ),
+]
 
 
 def _run(x, group_index=None):
