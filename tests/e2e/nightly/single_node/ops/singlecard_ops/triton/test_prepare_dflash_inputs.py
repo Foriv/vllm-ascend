@@ -14,10 +14,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.v2.spec_decode.prepare_dflash_inputs import prepare_dflash_inputs_triton
 from vllm_ascend.worker.v2.spec_decode.dflash.speculator import prepare_dflash_inputs
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 ACCURACY_CASES = [
     {
         "name": "business_b8_t1626",
@@ -569,11 +565,17 @@ def _run_case(case):
     _cleanup()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("case", ACCURACY_CASES, ids=lambda case: case["name"])
 def test_prepare_dflash_inputs_impl(case):
     _run_case(case)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("num_reqs,context_len", [(39, 9), (40, 9), (41, 9), (48, 9), (8, 1024), (1, 16384)])
 def test_prepare_dflash_inputs_partition_boundaries(num_reqs, context_len):
     case = {
@@ -591,6 +593,9 @@ def test_prepare_dflash_inputs_partition_boundaries(num_reqs, context_len):
     _run_case(case)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_prepare_dflash_inputs_wrapper_forwards_dcp():
     case = next(case for case in ACCURACY_CASES if case["name"] == "dcp_physical384_kernel128")
     data = _build_inputs(case, "npu")

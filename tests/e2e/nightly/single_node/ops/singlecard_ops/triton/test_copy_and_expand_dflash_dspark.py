@@ -15,10 +15,6 @@ from vllm_ascend.spec_decode.dflash_proposer import (
     _compute_num_programs,
 )
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 PARALLEL_DRAFTING_TOKEN_ID = 151643
 KV_BLOCK_SIZE = 128
 
@@ -115,6 +111,9 @@ CONFIGS = [
 ]
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("batch_size,ctx_lens,num_spec,sample_from_anchor,has_num_rejected", CONFIGS)
 def test_copy_and_expand_dflash_dspark(batch_size, ctx_lens, num_spec, sample_from_anchor, has_num_rejected):
     init_device_properties_triton()
@@ -219,6 +218,9 @@ def test_copy_and_expand_dflash_dspark(batch_size, ctx_lens, num_spec, sample_fr
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("position_dtype", [torch.int32, torch.int64])
 @pytest.mark.parametrize("sample_from_anchor", [True, False])
 @pytest.mark.parametrize("empty_request", [0, 1, 2])

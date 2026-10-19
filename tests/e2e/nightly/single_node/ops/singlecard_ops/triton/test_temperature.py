@@ -7,10 +7,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.worker.v2.sample.gumbel import apply_temperature
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 # Common vocab sizes from mainstream models
 VOCAB_SIZES = [
     32000,  # LLaMA / LLaMA2 / Mistral
@@ -42,6 +38,9 @@ def torch_apply_temperature(
         logits[token_idx] = logits[token_idx].float() / temp
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     "num_tokens, vocab_size",
     [(random.randint(1, 64), vocab_size) for vocab_size in VOCAB_SIZES],

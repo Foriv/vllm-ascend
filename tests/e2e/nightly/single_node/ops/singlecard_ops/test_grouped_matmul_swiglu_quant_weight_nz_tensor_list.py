@@ -8,11 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="This local NZ-list GMM kernel is configured for Ascend A2/A3",
-)
-
 # enable internal format
 torch_npu.npu.config.allow_internal_format = True
 # enable vllm-ascend custom ops
@@ -107,6 +102,10 @@ def process_groups(
     return quantOutput, quantScaleOutput
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="This local NZ-list GMM kernel is configured for Ascend A2/A3",
+)
 @torch.inference_mode()
 def test_gmm_swiglu_quant_weight_nz_tensor_list():
     M, K, E, N = 8192, 7168, 4, 4096

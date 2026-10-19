@@ -6,10 +6,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.worker.v2.sample.min_p import apply_min_p
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 
 def torch_min_p_torch(
     logits: torch.Tensor,
@@ -35,6 +31,9 @@ def torch_min_p_torch(
     return out
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     "num_reqs,vocab_size",
     [

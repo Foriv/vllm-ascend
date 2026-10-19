@@ -10,10 +10,6 @@ from vllm_ascend.ops.triton.spec_decode.utils import prepare_inputs_padded_kerne
 from vllm_ascend.ops.triton.triton_utils import get_vectorcore_num
 from vllm_ascend.spec_decode.llm_base_proposer import _PREPARE_INPUTS_BLOCK_SIZE as BLOCK_SIZE
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 
 def prepare_inputs_padded_ref(
     cu_num_draft_tokens,
@@ -38,6 +34,9 @@ def prepare_inputs_padded_ref(
     return token_indices_to_sample.to(torch.int32)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("num_reqs", [1, 7, 32, 128, 2048])
 def test_prepare_inputs_padded(num_reqs):
     device = "npu"

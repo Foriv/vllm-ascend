@@ -19,11 +19,10 @@ from vllm_ascend.worker.v2.block_table import (
     AscendBlockTables,
 )
 
-pytestmark = pytest.mark.skipif(
+
+@pytest.mark.skipif(
     get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
-
-
 @pytest.mark.parametrize(
     ("cp_size", "cp_rank", "cp_interleave"),
     [
@@ -115,6 +114,9 @@ def test_compute_slot_mapping_npu_kernel_cp(cp_size: int, cp_rank: int, cp_inter
     torch.testing.assert_close(slot_mappings, ref_slot_mappings)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_ascend_block_tables_compute_slot_mappings_out() -> None:
     """Exercise the V2 override, including its current ``out`` argument."""
     device = torch.device("npu")

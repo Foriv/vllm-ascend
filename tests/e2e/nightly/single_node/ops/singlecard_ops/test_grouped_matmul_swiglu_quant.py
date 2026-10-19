@@ -9,11 +9,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="This local GMM SwiGLU kernel is configured for Ascend A2/A3",
-)
-
 enable_custom_op()
 
 
@@ -129,6 +124,10 @@ def generate_non_decreasing_sequence(length, upper_limit):
     return sequence
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="This local GMM SwiGLU kernel is configured for Ascend A2/A3",
+)
 @torch.inference_mode()
 def test_grouped_matmul_swiglu_quant_kernel():
     E = 16

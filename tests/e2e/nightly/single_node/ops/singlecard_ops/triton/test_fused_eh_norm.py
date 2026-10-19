@@ -9,10 +9,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.linearnorm.fused_eh_norm import fused_eh_norm
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 TOLERANCES = {
     torch.float16: (2e-3, 2e-2),
     torch.bfloat16: (2e-2, 5e-2),
@@ -29,6 +25,9 @@ def fused_eh_norm_ref(positions, embeds, previous_hidden, enorm_w, hnorm_w, eps)
     return torch.cat((e_norm, h_norm), dim=-1).to(embeds.dtype)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32])
 @pytest.mark.parametrize("strided_rows", [False, True])
 @pytest.mark.parametrize(

@@ -9,10 +9,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.worker.v2.sample.bad_words import apply_bad_words
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 # Test cases for different input shapes
 BAD_WORDS_TEST_CASES = [
     pytest.param(512, 50257, 16, 3, 2, id="small-case"),
@@ -92,6 +88,9 @@ def create_test_data(num_tokens, vocab_size, num_requests, num_bad_words_per_req
     )
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     "num_tokens, vocab_size, num_requests, num_bad_words_per_req, bad_word_length", BAD_WORDS_TEST_CASES
 )
@@ -114,6 +113,9 @@ def test_apply_bad_words_different_shapes(
     print(f"Test passed: tokens={num_tokens}, requests={num_requests}")
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @torch.inference_mode()
 def test_apply_bad_words_no_bad_words(device="npu"):
     """Test apply_bad_words with no bad words"""
@@ -136,6 +138,9 @@ def test_apply_bad_words_no_bad_words(device="npu"):
     print("No bad words test passed")
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @torch.inference_mode()
 def test_apply_bad_words_edge_cases(device="npu"):
     """Test apply_bad_words with edge cases"""
@@ -162,6 +167,9 @@ def test_apply_bad_words_edge_cases(device="npu"):
     print("Maximum bad words test passed")
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @torch.inference_mode()
 def test_apply_bad_words_token_limit(device="npu"):
     """Test apply_bad_words with token limit cases"""

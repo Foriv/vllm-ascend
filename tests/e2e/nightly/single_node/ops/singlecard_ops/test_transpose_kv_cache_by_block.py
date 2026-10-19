@@ -9,11 +9,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
-)
-
 enable_custom_op()
 
 torch.set_printoptions(threshold=float("inf"))
@@ -76,6 +71,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
             )
         del k, v
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_transpose_kv_cache_by_block(self):
         # (layers, block_num, block_size, num_kv_head, head_dim, num_need_pulls)
         test_cases = [
@@ -126,6 +125,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
         torch.npu.empty_cache()
         torch.npu.reset_peak_memory_stats()
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_block_strides_preserve_storage(self):
         # Cover full-load and split-block kernels, including a split tail.
         for dtype in (torch.float16, torch.bfloat16):
@@ -191,6 +194,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
                             metadata, [(cache.data_ptr(), cache.stride(), cache.storage_offset()) for cache in views]
                         )
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_single_block_strides_preserve_storage(self):
         block_size, num_heads, head_dim, split_num = 16, 4, 128, 2
         dense_stride = block_size * num_heads * head_dim
@@ -225,6 +232,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
                     metadata, [(cache.data_ptr(), cache.stride(), cache.storage_offset()) for cache in views]
                 )
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_empty_cache_requires_empty_block_ids(self):
         backing = torch.randn(2, 16, 4, 128, dtype=torch.float16, device="npu")
         before = backing.cpu()
@@ -236,6 +247,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
             torch.ops._C_ascend.transpose_kv_cache_by_block([cache], [cache], ids, 16, 4, 128, 2, 1)
         torch.testing.assert_close(backing.cpu(), before, rtol=0, atol=0)
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_rejects_overlapping_blocks(self):
         backing = torch.randn(2, 16, 4, 128, dtype=torch.float16, device="npu")
         before = backing.cpu()
@@ -245,6 +260,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
             torch.ops._C_ascend.transpose_kv_cache_by_block([cache], [cache], ids, 16, 4, 128, 2, 1)
         torch.testing.assert_close(backing.cpu(), before, rtol=0, atol=0)
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_rejects_noncontiguous_block_payload(self):
         backing = torch.randn(3, 16, 4, 256, dtype=torch.float16, device="npu")
         cache = backing[..., ::2]
@@ -254,6 +273,10 @@ class TestTransposeKvCacheByBlock(unittest.TestCase):
             torch.ops._C_ascend.transpose_kv_cache_by_block([cache], [cache], ids, 16, 4, 128, 2, 1)
         torch.testing.assert_close(backing.cpu(), before, rtol=0, atol=0)
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+        reason="TransposeKvCacheByBlock is configured for Ascend A2/A3",
+    )
     def test_empty_block_ids_preserve_cache(self):
         backing = torch.randn(3, 2, 16, 4, 128, dtype=torch.float16, device="npu")
         before = backing.cpu()

@@ -21,11 +21,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 
 from .test_kv_quant_sparse_flash_attention_vllm import BF16_ATOL, BF16_RTOL, _run_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
-)
-
 NOPE_DIM = 512
 ROPE_DIM = 64
 QUANT_TILE_SIZE = 128
@@ -244,6 +239,10 @@ def _check_uniform(outputs, expected, counts, return_lse):
         torch.testing.assert_close(lse, counts[valid].log(), atol=0, rtol=0)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
+)
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)
 @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
 @pytest.mark.parametrize("return_lse", (False, True))
@@ -261,6 +260,10 @@ def test_rope0_compact_matches_padded_bitwise(case, dtype, return_lse):
     _assert_outputs_equal(actual, repeated, case, return_lse)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
+)
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)
 @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
 @pytest.mark.parametrize("rope_dim", (0, ROPE_DIM))
@@ -276,6 +279,10 @@ def test_rope_uniform_attention_and_lse(case, dtype, rope_dim, return_lse, recor
     record_property("attention_matches_mean_bitwise", torch.equal(actual[0].cpu(), expected))
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
+)
 @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
 @pytest.mark.parametrize("rope_dim", (0, ROPE_DIM))
 @pytest.mark.parametrize("return_lse", (False, True))
@@ -305,6 +312,10 @@ def test_rope_graph_capture_replay(dtype, rope_dim, return_lse):
         _assert_outputs_equal(actual, eager, case, return_lse)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
+)
 @pytest.mark.parametrize(
     "rope_dim,query_dim,key_dim",
     ((-1, 512, 528), (32, 544, 592), (128, 640, 784), (0, 576, 528), (0, 512, 656), (64, 512, 656), (64, 576, 528)),
@@ -323,6 +334,10 @@ def test_rope_invalid_shape_or_dimension(rope_dim, query_dim, key_dim):
         _run_custom_op(inputs)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="C8 rope=0 custom-kernel tests require an A2 or A3 hardware profile.",
+)
 @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
 @torch.inference_mode()
 def test_rope0_python_quant_cache_attention_pipeline(dtype):

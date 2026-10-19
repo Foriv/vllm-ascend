@@ -7,10 +7,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.worker.v2.sample.penalties import apply_penalties
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 NUM_TOKENS = [1, 4]
 VOCAB_SIZE = [1000]
 NUM_STATUS = [1, 4]
@@ -187,6 +183,9 @@ def create_test_data(
 
 class TestApplyPenalties:
     # make sure the kernel produces the same result as the pytorch implementation
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    )
     @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
     @pytest.mark.parametrize("vocab_size", VOCAB_SIZE)
     @pytest.mark.parametrize("num_status", NUM_STATUS)
@@ -253,6 +252,9 @@ class TestApplyPenalties:
         torch.npu.reset_peak_memory_stats()
 
     # make sure the kernel can handle large shapes without crashing
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    )
     @pytest.mark.parametrize(
         "num_tokens,vocab_size,num_status,num_speculative_tokens,dtype",
         [

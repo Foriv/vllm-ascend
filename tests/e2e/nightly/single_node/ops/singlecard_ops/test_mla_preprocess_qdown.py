@@ -8,11 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="MLA preprocess is registered only in A2/A3 builds",
-)
-
 enable_custom_op()
 
 
@@ -53,6 +48,10 @@ def _build_mode_caches(
     return kv_cache, kv_cache_rope
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @pytest.mark.parametrize("cache_mode", ["krope_ctkv", "nzcache"])
 @pytest.mark.parametrize("enable_rope", [True, False])
 @torch.inference_mode()
@@ -171,6 +170,10 @@ def test_mla_preprocess_kernel(cache_mode: str, enable_rope: bool):
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @torch.inference_mode()
 def test_mla_preprocess_whole_batch_matches_split_mm2_tiles():
     """A 257-token call (MM2 with m_loop > 1) must match a 256-token run.

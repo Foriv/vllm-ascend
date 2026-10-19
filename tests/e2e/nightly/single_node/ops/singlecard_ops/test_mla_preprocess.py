@@ -8,11 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="MLA preprocess is registered only in A2/A3 builds",
-)
-
 enable_custom_op()
 
 
@@ -123,6 +118,10 @@ SUPPORTED_MODE_COMBOS = [
 ]
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @pytest.mark.parametrize("cache_mode, quant_mode, dtype", SUPPORTED_MODE_COMBOS)
 @torch.inference_mode()
 def test_mla_preprocess_supported_modes(cache_mode: str, quant_mode: str, dtype: torch.dtype):
@@ -224,6 +223,10 @@ def test_mla_preprocess_supported_modes(cache_mode: str, quant_mode: str, dtype:
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @pytest.mark.parametrize(
     "cache_mode",
     ["krope_ctkv", "int8_nzcache"],
@@ -340,6 +343,10 @@ def test_mla_preprocess_qm1_noncontiguous_cache(cache_mode: str):
     _assert_dim0_holes_untouched(noncontiguous[5], stride_factor, float("nan"))
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @torch.inference_mode()
 def test_mla_preprocess_nzcache_accepts_logical_cache_shape():
     """nzcache must accept vLLM's [blocks, block_size, num_kv_heads, dim] caches.

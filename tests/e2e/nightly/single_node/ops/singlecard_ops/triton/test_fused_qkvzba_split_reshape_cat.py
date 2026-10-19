@@ -7,10 +7,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.fla.fused_qkvzba_split_reshape import fused_qkvzba_split_reshape_cat
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 
 def fused_qkvzba_split_reshape_cat_torch_ref(
     mixed_qkvz,
@@ -74,6 +70,9 @@ TEST_CASES = [
 ]
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     "seq_len, num_heads_qk, num_heads_v, head_qk_dim, head_v_dim",
     TEST_CASES,

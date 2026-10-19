@@ -11,11 +11,6 @@ import torch_npu
 from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() != AscendDeviceType.A5,
-    reason="SiTU MX requires Ascend A5",
-)
-
 SITU_BETA = 4.0
 SITU_LINEAR_BETA = 25.0
 SITU_ROUTED_INPUT_WIDTH = 6144
@@ -41,6 +36,10 @@ def _routed_input(rows: int) -> torch.Tensor:
     return _bf16_input(rows, SITU_ROUTED_INPUT_WIDTH)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() != AscendDeviceType.A5,
+    reason="SiTU MX requires Ascend A5",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(
     ("tp_size", "input_width"),
@@ -74,6 +73,10 @@ def test_shared_situ_mx_quant_shapes_single_op(
     assert mxscale.dtype == torch_npu.float8_e8m0fnu
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() != AscendDeviceType.A5,
+    reason="SiTU MX requires Ascend A5",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(("phase", "rows"), (("decode_max_local", 14), ("prefill_max_local", 910)))
 @torch.inference_mode()

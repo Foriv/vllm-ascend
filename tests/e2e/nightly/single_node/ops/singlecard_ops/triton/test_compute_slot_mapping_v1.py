@@ -8,10 +8,6 @@ from vllm_ascend.ops.triton.compute_slot_mapping import (
     _next_power_of_2,
 )
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 PAD_ID = -1
 TRITON_BLOCK_SIZE = 1024
 
@@ -58,6 +54,9 @@ def _compute_slot_mapping_ref(
     return slot_mapping
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     (
         "query_start_loc",
@@ -191,6 +190,9 @@ def test_compute_slot_mapping_kernel(
     torch.testing.assert_close(slot_mapping.cpu(), torch.tensor(expected, dtype=torch.int32))
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_compute_slot_mapping_kernel_four_requests_large_sequences():
     device = "npu"
     sequence_lengths = (1024, 2048, 4096, 8192)

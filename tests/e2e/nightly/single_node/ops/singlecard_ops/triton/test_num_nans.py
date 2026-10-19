@@ -55,10 +55,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton  # noqa: E402
 from vllm_ascend.ops.triton.v2.metrics.num_nans import _num_nans_kernel  # noqa: E402
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 BLOCK_SIZE = 8192
 SEED = 42
 # (num_reqs, vocab_size): 128 partial tail mask, 5000 non-power-of-two tail
@@ -118,6 +114,9 @@ class TestNumNansKernelPrecision:
         # the same shape, isolating the dtype effect.
         self.gen = torch.Generator().manual_seed(SEED)
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    )
     @pytest.mark.parametrize("dtype", DTYPES, ids=["fp32", "bf16", "fp16"])
     @pytest.mark.parametrize("layout", [LAYOUT_PREFIX, LAYOUT_SCATTER])
     @pytest.mark.parametrize("num_reqs,vocab_size", SHAPE_CASES)
@@ -141,6 +140,9 @@ class TestNumNansKernelPrecision:
         expected = _num_nans_ref(logits_npu.cpu())
         torch.testing.assert_close(num_nans, expected, rtol=0, atol=0)
 
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    )
     @pytest.mark.parametrize("dtype", DTYPES, ids=["fp32", "bf16", "fp16"])
     def test_num_nans_special_values_not_counted(self, dtype):
         """Inf / -0.0 / subnormal / max-finite must not be counted as NaN.

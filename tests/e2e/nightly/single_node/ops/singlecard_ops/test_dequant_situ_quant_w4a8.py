@@ -24,11 +24,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="DequantSituQuant is configured for Ascend A2/A3",
-)
-
 enable_custom_op()
 
 K3_ROUTED_INPUT_WIDTH = 6144
@@ -106,6 +101,10 @@ def _kimi_k3_predequantized_reference(x: torch.Tensor) -> tuple[torch.Tensor, to
     return y, scale
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(
     "group_counts",
@@ -146,6 +145,10 @@ def test_kimi_k3_routed_multi_expert_dequant_situ_quant(group_counts: tuple[int,
     torch.testing.assert_close(actual_scale.cpu(), expected_scale, rtol=5e-3, atol=1e-5)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize("rows", (1, 16, 1040), ids=("decode_m1", "decode_topk16", "prefill_t65_topk16"))
 @torch.inference_mode()
@@ -164,6 +167,10 @@ def test_kimi_k3_predequantized_bf16_situ_quant(rows: int):
     torch.testing.assert_close(actual_scale.cpu(), expected_scale, rtol=5e-3, atol=1e-5)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(
     ("tp_size", "input_width"),
@@ -191,6 +198,10 @@ def test_kimi_k3_shared_expert_without_bias_or_group_index(tp_size: int, input_w
     torch.testing.assert_close(actual_scale.cpu(), expected_scale, rtol=5e-3, atol=1e-5)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @torch.inference_mode()
 def test_kimi_k3_zero_routed_rows_return_empty_outputs():

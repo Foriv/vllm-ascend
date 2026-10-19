@@ -7,10 +7,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.activation.swiglu_quant import swiglu_quant
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 DEVICE = "npu"
 INT8_MAX = 127
 TOLERANCES = {
@@ -40,6 +36,9 @@ def _dynamic_quant_reference(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tenso
     return quantized, scale
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     ("shape", "dtype", "group_counts", "group_list_dtype"),
     [
@@ -77,6 +76,9 @@ def test_swiglu_quant_correctness(shape, dtype, group_counts, group_list_dtype, 
     torch.testing.assert_close(actual.cpu().float(), expected.float(), rtol=0, atol=1)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @torch.inference_mode()
 def test_swiglu_quant_without_quantization(dtype):
@@ -93,6 +95,9 @@ def test_swiglu_quant_without_quantization(dtype):
     torch.testing.assert_close(actual.cpu().float(), expected, rtol=rtol, atol=atol)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_swiglu_quant_rejects_invalid_group_list_type():
     x = torch.empty((1, 4096), dtype=torch.float16, device=DEVICE)
     group_list = torch.tensor([1], dtype=torch.int32, device=DEVICE)
@@ -101,6 +106,9 @@ def test_swiglu_quant_rejects_invalid_group_list_type():
         swiglu_quant(x, group_list, group_list_type=2)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_swiglu_quant_rejects_invalid_group_list_dtype():
     x = torch.empty((1, 4096), dtype=torch.float16, device=DEVICE)
     group_list = torch.tensor([1], dtype=torch.float32, device=DEVICE)

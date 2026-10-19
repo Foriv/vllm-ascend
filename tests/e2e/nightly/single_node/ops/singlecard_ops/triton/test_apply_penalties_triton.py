@@ -15,10 +15,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.sample.penalties import apply_all_penalties as ascend_apply_all_penalties
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 
 @pytest.fixture(autouse=True)
 def single_card_sampling_config(monkeypatch):
@@ -57,6 +53,9 @@ def _make_tokens(
     return tokens
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("num_seqs", [1, 8, 32, 128])
 @pytest.mark.parametrize("vocab_size", [5120, 151936])
 @pytest.mark.parametrize(

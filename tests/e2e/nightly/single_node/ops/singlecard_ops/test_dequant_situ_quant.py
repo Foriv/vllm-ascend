@@ -8,11 +8,6 @@ import torch
 from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="DequantSiTU regression targets Ascend A2/A3",
-)
-
 SITU_BETA = 4.0
 SITU_LINEAR_BETA = 25.0
 SITU_ROUTED_INPUT_WIDTH = 6144
@@ -86,6 +81,10 @@ def _run_dequant_situ_quant(
     )
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSiTU regression targets Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(
     ("tp_size", "input_width"),
@@ -117,6 +116,10 @@ def test_shared_dequant_situ_quant_single_op(
     torch.testing.assert_close(actual_scale.cpu(), expected_scale, rtol=5e-3, atol=1e-5)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSiTU regression targets Ascend A2/A3",
+)
 @pytest.mark.skip_global_cleanup
 @pytest.mark.parametrize(
     ("phase", "rows"),

@@ -6,10 +6,6 @@ import torch
 from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 NUM_TOKENS = [1, 4096]
 NUM_QKV_HEADS = [(2, 1), (16, 2)]
 HEAD_SIZES = [128, 256]
@@ -216,6 +212,9 @@ def naive_split_qkv_rmsnorm_mrope_interleaved(
     return q, k, v
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_q_heads, num_kv_heads", NUM_QKV_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)

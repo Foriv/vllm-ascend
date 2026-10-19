@@ -9,12 +9,11 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.fla.chunk import chunk_gated_delta_rule
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 
 class TestChunkGatedDeltaRule(PytestBase):
+    @pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    )
     def test_triton_fusion_ops(self):
         mock_attn_metadata = MagicMock()
         mock_attn_metadata.num_decodes = 1
@@ -50,6 +49,9 @@ class TestChunkGatedDeltaRule(PytestBase):
         assert last_recurrent_state.shape == (3, 8, 128, 128)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_chunk_gated_delta_rule_310_state_layout_matches_vllm():
     q = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
     k = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)

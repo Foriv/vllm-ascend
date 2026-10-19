@@ -18,10 +18,6 @@ from vllm_ascend.lora.lora_ops import (
 )
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 # TP-local Qwen3.5-27B inference shapes. The single-slice case covers the
 # transposed-B path; QKV and QKVZ cover three- and four-slice packed weights.
 PROJECTION_SHAPES = {
@@ -164,6 +160,9 @@ def _launch_lora_kernels(
     )
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("slice_rank", [8, 16, 32, 64])
 @pytest.mark.parametrize("token_count,projection_name", TOKEN_CASES)
 @torch.inference_mode()

@@ -12,10 +12,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.worker.v2.spec_decode.rejection_sampler_utils import rejection_sample
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 VOCAB_SIZE = 4096
 
 pytest.importorskip("triton")
@@ -76,6 +72,9 @@ def _build_rejection_sample_inputs(
     )
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize(
     "num_speculative_steps,temperature,unconditional_rates",
     [
@@ -161,6 +160,9 @@ def test_synthetic_rejection_sample(
     torch.npu.empty_cache()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("has_draft_logits", [True, False])
 @torch.inference_mode()
 def test_draft_vocab_narrower_than_target_vocab(has_draft_logits: bool):
@@ -220,6 +222,9 @@ def test_draft_vocab_narrower_than_target_vocab(has_draft_logits: bool):
     torch.npu.empty_cache()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("has_draft_logits", [True, False])
 @torch.inference_mode()
 def test_placeholder_draft_tokens_are_rejected(has_draft_logits: bool):

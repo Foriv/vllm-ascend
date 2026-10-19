@@ -8,11 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.utils import enable_custom_op
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-    reason="MLA preprocess is registered only in A2/A3 builds",
-)
-
 enable_custom_op()
 
 
@@ -20,6 +15,10 @@ def _tensor_written(tensor: torch.Tensor) -> bool:
     return bool((~torch.isnan(tensor)).any().item())
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="MLA preprocess is registered only in A2/A3 builds",
+)
 @pytest.mark.parametrize("enable_rope", [True, False])
 @torch.inference_mode()
 def test_mla_preprocess_kernel(enable_rope: bool):

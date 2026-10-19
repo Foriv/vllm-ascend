@@ -8,10 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 MROPE_SECTION = [[32, 32, 32]]
 DTYPES = [torch.bfloat16, torch.float16]
 HEAD_SIZES = [128]
@@ -117,6 +113,9 @@ def create_test_data(num_tokens, n_q_head, n_kv_head, rotary_dim, head_size, dev
     return q, k, cos, sin
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("mrope_section", MROPE_SECTION)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_q_heads", NUM_Q_HEADS)

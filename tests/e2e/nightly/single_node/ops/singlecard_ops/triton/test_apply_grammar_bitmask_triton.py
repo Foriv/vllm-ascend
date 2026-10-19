@@ -12,10 +12,6 @@ from vllm_ascend.ops.triton.v2.apply_grammar_bitmask import (
     _apply_grammar_bitmask_kernel,
 )
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 ROWS = 64
 NUM_REQS = 16
 LOGITS_PER_REQ = 4
@@ -46,6 +42,9 @@ def _build_reference(
     return expected
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_apply_grammar_bitmask_business_shape():
     generator = torch.Generator(device="cpu")
     generator.manual_seed(0)

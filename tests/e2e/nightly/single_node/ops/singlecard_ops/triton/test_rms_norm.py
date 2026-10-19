@@ -6,10 +6,6 @@ from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.rms_norm import triton_q_rms
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 DEVICE = "npu"
 TOLERANCES = {
     torch.float16: (2e-3, 2e-2),
@@ -29,6 +25,9 @@ def rms_norm_ref(x: torch.Tensor, eps: float) -> torch.Tensor:
     return out.to(x.dtype)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32])
 @pytest.mark.parametrize(
     ("shape", "eps"),
@@ -57,6 +56,9 @@ def test_triton_q_rms_correctness(dtype, shape, eps):
     )
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 def test_triton_q_rms_rejects_unsupported_dim():
     q = torch.empty((1, 1, 2049), dtype=torch.float16, device=DEVICE)
 

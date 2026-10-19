@@ -29,13 +29,7 @@ import vllm_ascend.vllm_ascend_C  # type: ignore[import-untyped]  # noqa: F401,E
 
 OP = torch.ops._C_ascend.dequant_situ_quant
 
-pytestmark = [
-    pytest.mark.skipif(not torch.npu.is_available(), reason="requires an available NPU"),
-    pytest.mark.skipif(
-        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
-        reason="DequantSituQuant is configured for Ascend A2/A3",
-    ),
-]
+pytestmark = [pytest.mark.skipif(not torch.npu.is_available(), reason="requires an available NPU")]
 
 
 def _run(x, group_index=None):
@@ -85,6 +79,10 @@ def _bf16_x(rows, cols, seed):
     return (torch.randn(rows, cols, device="npu:0") * 2.0).to(torch.bfloat16)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.parametrize("rows,cols,groups", [(896, 6144, 14), (528, 6144, 14), (64, 128, 8)])
 def test_group_counts_equal_rows_matches_full_scan(rows, cols, groups):
     """sum(counts) == rows: group path must be bit-identical to None."""
@@ -96,6 +94,10 @@ def test_group_counts_equal_rows_matches_full_scan(rows, cols, groups):
     assert torch.equal(s_none, s_grp)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 @pytest.mark.parametrize("rows,active,groups", [(896, 16, 14), (33664, 526, 14), (7296, 456, 14)])
 def test_group_counts_smaller_only_touches_active_rows(rows, active, groups):
     """sum(counts) < rows: dead tail rows are skipped; active prefix matches
@@ -108,6 +110,10 @@ def test_group_counts_smaller_only_touches_active_rows(rows, active, groups):
     assert torch.equal(s_none[:active], s_grp[:active])
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 def test_group_counts_exceeding_rows_clamps():
     """sum(counts) > rows (padded tail-chunk buffer): must not crash and must
     still produce correct outputs for the rows that exist."""
@@ -122,6 +128,10 @@ def test_group_counts_exceeding_rows_clamps():
     assert ((s_grp - s_ref).abs() / s_ref.clamp_min(1e-6)).max() < 1e-5
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3),
+    reason="DequantSituQuant is configured for Ascend A2/A3",
+)
 def test_bf16_output_matches_float32_reference():
     x = _bf16_x(528, 6144, seed=4)
     y, scale = _run(x, None)

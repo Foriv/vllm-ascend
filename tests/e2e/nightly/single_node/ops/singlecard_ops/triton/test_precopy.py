@@ -8,10 +8,6 @@ from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.v2.mamba.precopy import precopy_mamba_align_fused_kernel
 
-pytestmark = pytest.mark.skipif(
-    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
-)
-
 NUM_LAYERS = 2
 CONV_WIDTH = 4
 CONV_DIM = 64
@@ -74,6 +70,9 @@ def _reference(convs, ssms, block_table, src_col, dst_col, bias, conv_dim_first)
     return conv_ref, ssm_ref
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("conv_dim_first", [False, True])
 @pytest.mark.parametrize("has_idx_mapping", [False, True])
 @pytest.mark.parametrize("temporal_tiles", [1, 4])

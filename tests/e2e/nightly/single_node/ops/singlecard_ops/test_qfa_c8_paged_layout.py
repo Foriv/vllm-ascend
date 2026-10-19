@@ -12,12 +12,11 @@ import torch_npu
 from vllm_ascend.device.device_config import get_ascend_device_type
 from vllm_ascend.device.hardware import AscendDeviceType
 
-pytestmark = pytest.mark.skipif(
+
+@pytest.mark.skipif(
     get_ascend_device_type() != AscendDeviceType.A5,
     reason="The QFA C8-MXFP regression requires Ascend A5",
 )
-
-
 @pytest.mark.parametrize("query_tokens", [1, 64])
 @pytest.mark.parametrize("ratio", [1, 2])
 def test_qfa_strided_scales_match_contiguous_reference(query_tokens, ratio):
