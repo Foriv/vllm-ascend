@@ -163,3 +163,13 @@ estimated_times:
   tests/e2e/pull_request/one_card/test_thinking_budget.py: 80
   tests/e2e/pull_request/one_card/test_model_runner_v1_with_device.py: 70
   tests/e2e/pull_request/one_card/test_msa_index_score.py: 40
+  # Singlecard reference metadata; nightly does not read this file.
+  # Unmeasured files retain the existing 600s fallback.
+  # A2 full-file reference runs on 2026-10-15, commit 05ac43afd.
+  # Include pytest startup; apply 10% buffer and round to 10s.
+  # These are provisional A3 estimates, not measured A3/A5 nightly timings.
+  tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_dequant_situ_quant.py: 60
+  tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kda_gate_cumsum_vllm.py: 40
+  tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kda_layout_swap12.py: 40
+  tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_rms_norm_cast.py: 40
+  tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_copy_conv_state.py: 50

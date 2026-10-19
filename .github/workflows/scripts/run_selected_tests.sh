@@ -176,19 +176,6 @@ run_pytest_target() {
   log_name="${log_name%.py}"
   log_name="${log_name//[^a-zA-Z0-9_.-]/_}"
   local log_file="${pytest_log_dir}/${test_index}-${log_name}.log"
-  case "${target}" in
-    tests/e2e/nightly/single_node/ops/singlecard_ops/*)
-      # Set the mask before pytest imports accelerator packages or conftest.
-      # A local export restores the assignment before the next test target.
-      local -x ASCEND_RT_VISIBLE_DEVICES="${ASCEND_RT_VISIBLE_DEVICES-0}"
-      if [[ ! "${ASCEND_RT_VISIBLE_DEVICES}" =~ ^[[:space:]]*[0-9]+[[:space:]]*(,[[:space:]]*[0-9]+[[:space:]]*)*$ ]]; then
-        echo "Invalid ASCEND_RT_VISIBLE_DEVICES assignment: ${ASCEND_RT_VISIBLE_DEVICES}" >&2
-        return 1
-      fi
-      ASCEND_RT_VISIBLE_DEVICES="${ASCEND_RT_VISIBLE_DEVICES%%,*}"
-      ASCEND_RT_VISIBLE_DEVICES="${ASCEND_RT_VISIBLE_DEVICES//[[:space:]]/}"
-      ;;
-  esac
   echo "::group::${target}"
   echo -e "\033[1;34m=== Running target: ${target} ===\033[0m"
   local start_time=0

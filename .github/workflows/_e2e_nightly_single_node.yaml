@@ -304,13 +304,26 @@ jobs:
           VLLM_WORKER_MULTIPROC_METHOD: spawn
           VLLM_USE_MODELSCOPE: True
           VLLM_CI_RUNNER: ${{ inputs.runner }}
+          TEST_PATH: ${{ inputs.tests }}
         working-directory: /vllm-workspace/vllm-ascend
         run: |
           export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-          echo "Running pytest with tests path: ${{ inputs.tests }}"
+          echo "Running pytest with tests path: ${TEST_PATH}"
           mkdir -p /tmp/test-logs
           set -o pipefail
-          pytest -sv "${{ inputs.tests }}" 2>&1 | tee /tmp/test-logs/pytest-driven.log
+          case "${TEST_PATH}" in
+            tests/e2e/nightly/single_node/ops/singlecard_ops/*)
+              # Keep the first assigned device visible before pytest imports NPU packages.
+              singlecard_devices="${ASCEND_RT_VISIBLE_DEVICES-0}"
+              if [[ ! "${singlecard_devices}" =~ ^[[:space:]]*[0-9]+[[:space:]]*(,[[:space:]]*[0-9]+[[:space:]]*)*$ ]]; then
+                echo "Invalid ASCEND_RT_VISIBLE_DEVICES assignment: ${singlecard_devices}" >&2
+                exit 1
+              fi
+              singlecard_devices="${singlecard_devices%%,*}"
+              export ASCEND_RT_VISIBLE_DEVICES="${singlecard_devices//[[:space:]]/}"
+              ;;
+          esac
+          pytest -sv "${TEST_PATH}" 2>&1 | tee /tmp/test-logs/pytest-driven.log
 
       - name: Run Pytest (YAML-driven)
         id: yaml-test

@@ -240,8 +240,15 @@ You can run tests with `pytest` as well. Typical examples:
     ```
 
     Ascend C/native tests live under `singlecard_ops/ascendc/{a2a3,a5}/`.
-    PR CI routes A3-only files within `a2a3` to A3; select a supported file for
-    local runs. The existing flat 310P tests continue to use the 310P runner.
+    Single-card operator tests are registered by file in
+    `.github/workflows/configs/nightly_config.yaml`. Each entry specifies a
+    `name`, runner label (`os`), and pytest file (`tests`) under the target
+    architecture. Use `/nightly <name>` to request a configured task on a PR.
+    These tests are not added to PR full/precise CI or `/e2e` selection.
+    Generic Triton tests run on A3 unless explicitly configured for A5;
+    the two existing flat 310P tests use their own nightly entries.
+    For single-card tasks, pytest sees the first assigned NPU, or device 0
+    when no device assignment is provided.
 
 === "Multi-card"
 

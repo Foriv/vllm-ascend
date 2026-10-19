@@ -29,8 +29,8 @@ Test selection is driven by the coverage/AST based precision testing pipeline
   e2e test paths (files or directories) supplied via the ``/e2e`` PR
   comment. Each path is routed directly to the appropriate runner.
 
-- ``--all-tests``: Full-suite mode. Scans ``tests/ut`` (CPU),
-  ``tests/e2e/pull_request``, and the nightly ``singlecard_ops`` tree (NPU).
+- ``--all-tests``: Full-suite mode. Scans ``tests/ut`` (routed to the CPU
+  runner) and ``tests/e2e/pull_request`` (routed by directory convention).
   Used for ready-all runs and scheduled full scans.
 
 - ``--curated``: Curated-suite mode. Reads the named test list from
@@ -103,11 +103,7 @@ CPU_UT_BATCH_ALIAS = "cpu-ut"
 CPU_UT_BATCH_PATH = "tests/ut"
 
 # Full-suite mode roots scanned by --all-tests.
-_ALL_TESTS_ROOTS = (
-    "tests/ut",
-    "tests/e2e/pull_request",
-    "tests/e2e/nightly/single_node/ops/singlecard_ops",
-)
+_ALL_TESTS_ROOTS = ("tests/ut", "tests/e2e/pull_request")
 
 # When set via --skip-cpu-ut, tests/ut targets are dropped from every selection
 # mode. CPU UTs are executed by the cpu-ut job on every PR; the PR test
@@ -733,8 +729,8 @@ def main():
     input_group.add_argument(
         "--all-tests",
         action="store_true",
-        help="Run the full test suite: scan tests/ut (CPU), tests/e2e/pull_request, "
-        "and nightly singlecard_ops, routing e2e tests by configuration",
+        help="Run the full test suite: scan tests/ut (CPU) and "
+        "tests/e2e/pull_request, routing e2e tests by directory convention",
     )
     input_group.add_argument(
         "--curated",

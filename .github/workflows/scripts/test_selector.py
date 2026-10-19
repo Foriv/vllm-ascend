@@ -41,11 +41,7 @@ COVERAGE_DENSITY_THRESHOLD = 0.0
 # Minimum affected lines threshold
 MIN_AFFECTED_LINES = 1
 
-TEST_ROOTS = (
-    "tests/e2e/pull_request/",
-    "tests/ut/",
-    "tests/e2e/nightly/single_node/ops/singlecard_ops/",
-)
+TEST_ROOTS = ("tests/e2e/pull_request/", "tests/ut/")
 
 
 def is_selectable_test(path: str) -> bool:
@@ -54,14 +50,14 @@ def is_selectable_test(path: str) -> bool:
 
 def _get_test_files_from_pr_diff(diff_file: str) -> list[str]:
     """
-    Extract changed test files and directories affected by conftest changes.
-    Limit all targets to TEST_ROOTS; test files must match test_*.py.
+    Extract new/modified test files from PR diff.
+    Test files must be under TEST_ROOTS and match test_*.py.
 
     Args:
         diff_file: Path to the PR diff file
 
     Returns:
-        List of affected test file or directory paths
+        List of test case names that correspond to new/modified test files
     """
     test_files_found = []
 
@@ -78,30 +74,18 @@ def _get_test_files_from_pr_diff(diff_file: str) -> list[str]:
             test_file_path = line.removeprefix("+++ b/")
         elif line.startswith("rename to "):
             test_file_path = line.removeprefix("rename to ")
-        elif line.startswith(("--- a/", "rename from ")):
-            test_file_path = line.removeprefix("--- a/").removeprefix("rename from ")
-            # Removed or moved conftests also affect tests in their old directory.
-            if PurePosixPath(test_file_path).name != "conftest.py":
-                continue
         else:
             continue
 
         if is_selectable_test(test_file_path):
             changed_test_files.add(test_file_path)
-        elif PurePosixPath(test_file_path).name == "conftest.py":
-            config_dir = PurePosixPath(test_file_path).parent
-            for test_root in map(PurePosixPath, TEST_ROOTS):
-                if test_root.is_relative_to(config_dir):
-                    changed_test_files.add(test_root.as_posix())
-                elif config_dir.is_relative_to(test_root):
-                    changed_test_files.add(config_dir.as_posix())
 
     if not changed_test_files:
         return test_files_found
 
-    print(f"  Found {len(changed_test_files)} affected test path(s): {changed_test_files}")
+    print(f"  Found {len(changed_test_files)} changed test file(s): {changed_test_files}")
 
-    # Add affected paths directly to the recommended list (no matching with test_case_map).
+    # Add all changed test files directly to recommended list (no matching with test_case_map)
     for changed_file in changed_test_files:
         if changed_file not in test_files_found:
             test_files_found.append(changed_file)
