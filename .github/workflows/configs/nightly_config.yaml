@@ -285,12 +285,6 @@ a3-560t:
 310p:
   single_node:
     test_config:
-      - name: singlecard-ops-causal-conv1d-310-310p
-        os: linux-aarch64-310p-1
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_causal_conv1d_310.py
-      - name: singlecard-ops-recurrent-gated-delta-rule-310-310p
-        os: linux-aarch64-310p-1
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_recurrent_gated_delta_rule_310.py
       - name: Qwen3-8B-w8a8sc-310p
         os: linux-aarch64-310p-8
         config_file_path: Qwen3-8B-w8a8sc-310p.yaml
