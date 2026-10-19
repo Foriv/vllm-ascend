@@ -44,10 +44,6 @@ a2:
         os: linux-aarch64-a2b3-4
         config_file_path: Gemma4-31B-Dense.yaml
         config_base_path: tests/e2e/cases/models/configs/Gemma
-      - name: MiniMax-M2.5-w8a8-QuaRot-A2
-        os: linux-aarch64-a2b3-8
-        config_file_path: MiniMax-M2.5-w8a8-QuaRot-A2.yaml
-        config_base_path: tests/e2e/cases/models/configs/MiniMax
       - name: Qwen3.8-27B-w8a8-A2
         os: linux-aarch64-a2b3-2
         config_file_path: Qwen3.8-27B-w8a8-A2.yaml
@@ -103,339 +99,348 @@ a2:
 a3:
   single_node:
     test_config:
-      # Single-card operator tests: one explicit pytest file per task.
-      - name: singlecard-ascendc-add-rms-norm-bias-a3
+      # Single-card operator files; device-specific cases retain their pytest guards.
+      - name: singlecard-ops-add-rms-norm-bias-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_add_rms_norm_bias.py
-      - name: singlecard-ascendc-attn-res-fwd-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_add_rms_norm_bias.py
+      - name: singlecard-ops-attn-res-fwd-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_attn_res_fwd.py
-      - name: singlecard-ascendc-bgmv-expand-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_attn_res_fwd.py
+      - name: singlecard-ops-bgmv-expand-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_bgmv_expand.py
-      - name: singlecard-ascendc-bgmv-shrink-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_bgmv_expand.py
+      - name: singlecard-ops-bgmv-shrink-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_bgmv_shrink.py
-      - name: singlecard-ascendc-chunk-gated-delta-rule-fwd-h-vllm-aclnn-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_bgmv_shrink.py
+      - name: singlecard-ops-chunk-gated-delta-rule-fwd-h-vllm-aclnn-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_chunk_gated_delta_rule_fwd_h_vllm_aclnn.py
-      - name: singlecard-ascendc-compressor-metadata-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_chunk_gated_delta_rule_fwd_h_vllm_aclnn.py
+      - name: singlecard-ops-compressor-metadata-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_compressor_metadata.py
-      - name: singlecard-ascendc-copy-and-expand-eagle-inputs-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_compressor_metadata.py
+      - name: singlecard-ops-copy-and-expand-eagle-inputs-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_copy_and_expand_eagle_inputs.py
-      - name: singlecard-ascendc-copy-sfa-offload-metadata-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_copy_and_expand_eagle_inputs.py
+      - name: singlecard-ops-copy-conv-state-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_copy_sfa_offload_metadata.py
-      - name: singlecard-ascendc-dequant-situ-quant-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_copy_conv_state.py
+      - name: singlecard-ops-copy-sfa-offload-metadata-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_dequant_situ_quant.py
-      - name: singlecard-ascendc-dequant-situ-quant-group-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_copy_sfa_offload_metadata.py
+      - name: singlecard-ops-dequant-situ-quant-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_dequant_situ_quant_group.py
-      - name: singlecard-ascendc-dequant-situ-quant-w4a8-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_dequant_situ_quant.py
+      - name: singlecard-ops-dequant-situ-quant-group-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_dequant_situ_quant_w4a8.py
-      - name: singlecard-ascendc-dequant-swiglu-quant-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_dequant_situ_quant_group.py
+      - name: singlecard-ops-dequant-situ-quant-w4a8-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_dequant_swiglu_quant.py
-      - name: singlecard-ascendc-fused-lightning-indexer-manage-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_dequant_situ_quant_w4a8.py
+      - name: singlecard-ops-dequant-swiglu-quant-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_fused_lightning_indexer_manage.py
-      - name: singlecard-ascendc-fused-moe-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_dequant_swiglu_quant.py
+      - name: singlecard-ops-fused-lightning-indexer-manage-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_fused_moe.py
-      - name: singlecard-ascendc-fused-quant-lightning-indexer-manage-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_fused_lightning_indexer_manage.py
+      - name: singlecard-ops-fused-moe-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_fused_quant_lightning_indexer_manage.py
-      - name: singlecard-ascendc-fused-scatter-copy-sparse-flash-attention-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_fused_moe.py
+      - name: singlecard-ops-fused-quant-lightning-indexer-manage-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_fused_scatter_copy_sparse_flash_attention.py
-      - name: singlecard-ascendc-fused-sparse-attention-overlap-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_fused_quant_lightning_indexer_manage.py
+      - name: singlecard-ops-fused-scatter-copy-sparse-flash-attention-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_fused_sparse_attention_overlap.py
-      - name: singlecard-ascendc-gmm-dequant-situ-quant-msd-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_fused_scatter_copy_sparse_flash_attention.py
+      - name: singlecard-ops-fused-sparse-attention-overlap-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_gmm_dequant_situ_quant_msd.py
-      - name: singlecard-ascendc-gmm-swiglu-quant-weight-nz-tensor-list-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_fused_sparse_attention_overlap.py
+      - name: singlecard-ops-glm5next-state-gather-npu-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_gmm_swiglu_quant_weight_nz_tensor_list.py
-      - name: singlecard-ascendc-grouped-matmul-swiglu-quant-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_glm5next_state_gather_npu.py
+      - name: singlecard-ops-gmm-swiglu-quant-weight-nz-tensor-list-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_grouped_matmul_swiglu_quant.py
-      - name: singlecard-ascendc-inplace-partial-rotary-mul-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_gmm_swiglu_quant_weight_nz_tensor_list.py
+      - name: singlecard-ops-grouped-matmul-swiglu-quant-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_inplace_partial_rotary_mul.py
-      - name: singlecard-ascendc-kda-gate-cumsum-vllm-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_grouped_matmul_swiglu_quant.py
+      - name: singlecard-ops-inplace-partial-rotary-mul-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kda_gate_cumsum_vllm.py
-      - name: singlecard-ascendc-kda-layout-swap12-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_inplace_partial_rotary_mul.py
+      - name: singlecard-ops-kda-gate-cumsum-vllm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kda_layout_swap12.py
-      - name: singlecard-ascendc-kv-quant-sparse-flash-attention-vllm-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_gate_cumsum_vllm.py
+      - name: singlecard-ops-kda-layout-swap12-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kv_quant_sparse_flash_attention_vllm.py
-      - name: singlecard-ascendc-kv-quant-sparse-flash-attention-vllm-rope0-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_layout_swap12.py
+      - name: singlecard-ops-kda-state-copy-integration-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_kv_quant_sparse_flash_attention_vllm_rope0.py
-      - name: singlecard-ascendc-lim-mtp-index-reuse-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_state_copy_integration.py
+      - name: singlecard-ops-kda-state-copy-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_lim_mtp_index_reuse.py
-      - name: singlecard-ascendc-mla-preprocess-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_state_copy_triton.py
+      - name: singlecard-ops-kv-quant-sparse-flash-attention-vllm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_mla_preprocess.py
-      - name: singlecard-ascendc-mla-preprocess-nq-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kv_quant_sparse_flash_attention_vllm.py
+      - name: singlecard-ops-kv-quant-sparse-flash-attention-vllm-rope0-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_mla_preprocess_nq.py
-      - name: singlecard-ascendc-mla-preprocess-qdown-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kv_quant_sparse_flash_attention_vllm_rope0.py
+      - name: singlecard-ops-lim-mtp-index-reuse-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_mla_preprocess_qdown.py
-      - name: singlecard-ascendc-npu-hc-pre-v2-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_lim_mtp_index_reuse.py
+      - name: singlecard-ops-mla-dcp-dim0-stride-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_npu_hc_pre_v2.py
-      - name: singlecard-ascendc-npu-hc-pre-v3-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_mla_dcp_dim0_stride.py
+      - name: singlecard-ops-mla-preprocess-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_npu_hc_pre_v3.py
-      - name: singlecard-ascendc-npu-moe-gating-top-k-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_mla_preprocess.py
+      - name: singlecard-ops-mla-preprocess-nq-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_npu_moe_gating_top_k.py
-      - name: singlecard-ascendc-npu-moe-gating-top-k-hash-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_mla_preprocess_nq.py
+      - name: singlecard-ops-mla-preprocess-qdown-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_npu_moe_gating_top_k_hash.py
-      - name: singlecard-ascendc-qli-candidate-rows-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_mla_preprocess_qdown.py
+      - name: singlecard-ops-npu-hc-pre-v2-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_qli_candidate_rows.py
-      - name: singlecard-ascendc-quant-lightning-indexer-v2-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_hc_pre_v2.py
+      - name: singlecard-ops-npu-hc-pre-v3-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_quant_lightning_indexer_v2.py
-      - name: singlecard-ascendc-rms-norm-cast-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_hc_pre_v3.py
+      - name: singlecard-ops-npu-moe-gating-top-k-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_rms_norm_cast.py
-      - name: singlecard-ascendc-scatter-nd-update-sk-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_moe_gating_top_k.py
+      - name: singlecard-ops-npu-moe-gating-top-k-hash-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_scatter_nd_update_sk.py
-      - name: singlecard-ascendc-sparse-flash-mla-band-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_moe_gating_top_k_hash.py
+      - name: singlecard-ops-prepare-indexer-indices-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_sparse_flash_mla_band.py
-      - name: singlecard-ascendc-sparse-kv-offload-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_prepare_indexer_indices.py
+      - name: singlecard-ops-qli-candidate-rows-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_sparse_kv_offload.py
-      - name: singlecard-ascendc-transpose-kv-cache-by-block-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_qli_candidate_rows.py
+      - name: singlecard-ops-quant-lightning-indexer-v2-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_transpose_kv_cache_by_block.py
-      - name: singlecard-ascendc-uva-view-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_quant_lightning_indexer_v2.py
+      - name: singlecard-ops-quantize-indexer-query-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a2a3/test_uva_view.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_quantize_indexer_query.py
+      - name: singlecard-ops-rms-norm-cast-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_rms_norm_cast.py
+      - name: singlecard-ops-scatter-nd-update-sk-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_scatter_nd_update_sk.py
+      - name: singlecard-ops-sparse-flash-mla-band-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_sparse_flash_mla_band.py
+      - name: singlecard-ops-sparse-kv-offload-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_sparse_kv_offload.py
+      - name: singlecard-ops-transpose-kv-cache-by-block-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_transpose_kv_cache_by_block.py
+      - name: singlecard-ops-uva-view-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_uva_view.py
       - name: singlecard-triton-apply-grammar-bitmask-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_apply_grammar_bitmask_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_apply_grammar_bitmask_triton.py
       - name: singlecard-triton-apply-penalties-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_apply_penalties_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_apply_penalties_triton.py
       - name: singlecard-triton-bad-words-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_bad_words.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_bad_words.py
       - name: singlecard-triton-batch-invariant-ops-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_batch_invariant_ops.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_batch_invariant_ops.py
       - name: singlecard-triton-batch-memcpy-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_batch_memcpy.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_batch_memcpy.py
       - name: singlecard-triton-bincount-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_bincount.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_bincount.py
       - name: singlecard-triton-build-local-metadata-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_build_local_metadata_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_build_local_metadata_triton.py
       - name: singlecard-triton-categorical-sample-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_categorical_sample.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_categorical_sample.py
       - name: singlecard-triton-chunk-gated-delta-rule-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_chunk_gated_delta_rule.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_chunk_gated_delta_rule.py
       - name: singlecard-triton-chunk-kda-npu-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_chunk_kda_npu.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_chunk_kda_npu.py
       - name: singlecard-triton-clear-ssm-states-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_clear_ssm_states.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_clear_ssm_states.py
       - name: singlecard-triton-compute-slot-mapping-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_compute_slot_mapping.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_compute_slot_mapping.py
       - name: singlecard-triton-compute-slot-mapping-fused-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_compute_slot_mapping_fused.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_compute_slot_mapping_fused.py
       - name: singlecard-triton-compute-slot-mapping-v1-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_compute_slot_mapping_v1.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_compute_slot_mapping_v1.py
       - name: singlecard-triton-compute-token-logprobs-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_compute_token_logprobs.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_compute_token_logprobs.py
       - name: singlecard-triton-compute-topk-logprobs-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_compute_topk_logprobs.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_compute_topk_logprobs.py
       - name: singlecard-triton-copy-and-expand-dflash-dspark-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_copy_and_expand_dflash_dspark.py
-      - name: singlecard-triton-copy-conv-state-a3
-        os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_copy_conv_state.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_copy_and_expand_dflash_dspark.py
       - name: singlecard-triton-dcp-a2a-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_dcp_a2a.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_dcp_a2a.py
+      - name: singlecard-triton-dspark-swa-indices-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_dspark_swa_indices.py
       - name: singlecard-triton-fill-logprob-token-ids-kernel-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_fill_logprob_token_ids_kernel.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_fill_logprob_token_ids_kernel.py
       - name: singlecard-triton-fused-eh-norm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_fused_eh_norm.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_fused_eh_norm.py
       - name: singlecard-triton-fused-gdn-gating-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_fused_gdn_gating.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_fused_gdn_gating.py
       - name: singlecard-triton-fused-qkvzba-split-reshape-cat-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_fused_qkvzba_split_reshape_cat.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_fused_qkvzba_split_reshape_cat.py
       - name: singlecard-triton-fused-recurrent-kda-npu-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_fused_recurrent_kda_npu.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_fused_recurrent_kda_npu.py
       - name: singlecard-triton-glm5next-kpool-tail-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_glm5next_kpool_tail_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_glm5next_kpool_tail_triton.py
       - name: singlecard-triton-glm5next-output-writeback-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_glm5next_output_writeback.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_glm5next_output_writeback.py
       - name: singlecard-triton-glm5next-pool-key-indexer-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_glm5next_pool_key_indexer_triton.py
-      - name: singlecard-triton-glm5next-state-gather-npu-a3
-        os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_glm5next_state_gather_npu.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_glm5next_pool_key_indexer_triton.py
       - name: singlecard-triton-glm5next-tail-slot-mapping-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_glm5next_tail_slot_mapping_triton.py
-      - name: singlecard-triton-kda-state-copy-integration-a3
-        os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_kda_state_copy_integration.py
-      - name: singlecard-triton-kda-state-copy-triton-a3
-        os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_kda_state_copy_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_glm5next_tail_slot_mapping_triton.py
       - name: singlecard-triton-kimi-kda-fused-norm-gate-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_kimi_kda_fused_norm_gate.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_kimi_kda_fused_norm_gate.py
       - name: singlecard-triton-kv-block-zeroer-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_kv_block_zeroer.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_kv_block_zeroer.py
       - name: singlecard-triton-l2norm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_l2norm.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_l2norm.py
       - name: singlecard-triton-layernorm-gated-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_layernorm_gated.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_layernorm_gated.py
       - name: singlecard-triton-lightning-attn-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_lightning_attn.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_lightning_attn.py
       - name: singlecard-triton-log-softmax-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_log_softmax.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_log_softmax.py
       - name: singlecard-triton-lora-linear-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_lora_linear.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_lora_linear.py
       - name: singlecard-triton-mamba-state-index-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_mamba_state_index.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_mamba_state_index.py
       - name: singlecard-triton-min-p-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_min_p.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_min_p.py
       - name: singlecard-triton-mrope-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_mrope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_mrope.py
       - name: singlecard-triton-msa-m3-index-postprocess-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_msa_m3_index_postprocess.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_msa_m3_index_postprocess.py
       - name: singlecard-triton-muls-add-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_muls_add.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_muls_add.py
+      - name: singlecard-triton-mxfp-k-scale-scatter-a3
+        os: linux-aarch64-a3-800i-2
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_mxfp_k_scale_scatter.py
       - name: singlecard-triton-num-nans-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_num_nans.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_num_nans.py
       - name: singlecard-triton-pcp-kv-cache-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_pcp_kv_cache.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_pcp_kv_cache.py
       - name: singlecard-triton-penality-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_penality.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_penality.py
       - name: singlecard-triton-postprocess-mamba-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_postprocess_mamba.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_postprocess_mamba.py
       - name: singlecard-triton-postprocess-temporal-copy-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_postprocess_temporal_copy.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_postprocess_temporal_copy.py
       - name: singlecard-triton-precopy-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_precopy.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_precopy.py
       - name: singlecard-triton-prepare-dflash-inputs-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_prepare_dflash_inputs.py
-      - name: singlecard-triton-prepare-indexer-indices-a3
-        os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_prepare_indexer_indices.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_prepare_dflash_inputs.py
       - name: singlecard-triton-prepare-inputs-padded-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_prepare_inputs_padded.py
-      - name: singlecard-triton-quantize-indexer-query-a3
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_prepare_inputs_padded.py
+      - name: singlecard-triton-prepare-nonempty-keypool-inputs-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_quantize_indexer_query.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_prepare_nonempty_keypool_inputs.py
       - name: singlecard-triton-rejection-sample-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_rejection_sample.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_rejection_sample.py
       - name: singlecard-triton-rejection-sample-v2-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_rejection_sample_v2.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_rejection_sample_v2.py
       - name: singlecard-triton-resample-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_resample.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_resample.py
       - name: singlecard-triton-rms-norm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_rms_norm.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_rms_norm.py
       - name: singlecard-triton-rope-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_rope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_rope.py
       - name: singlecard-triton-sampling-mask-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_sampling_mask.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_sampling_mask.py
       - name: singlecard-triton-sparse-index-remap-triton-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_sparse_index_remap_triton.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_sparse_index_remap_triton.py
       - name: singlecard-triton-split-qkv-rmsnorm-mrope-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_split_qkv_rmsnorm_mrope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_split_qkv_rmsnorm_mrope.py
       - name: singlecard-triton-split-qkv-rmsnorm-rope-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_split_qkv_rmsnorm_rope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_split_qkv_rmsnorm_rope.py
       - name: singlecard-triton-split-qkv-rmsnorm-rope-vnorm-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_split_qkv_rmsnorm_rope_vnorm.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_split_qkv_rmsnorm_rope_vnorm.py
       - name: singlecard-triton-split-qkv-tp-rmsnorm-rope-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_split_qkv_tp_rmsnorm_rope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_split_qkv_tp_rmsnorm_rope.py
       - name: singlecard-triton-swiglu-quant-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_swiglu_quant.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_swiglu_quant.py
       - name: singlecard-triton-swiglustep-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_swiglustep.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_swiglustep.py
       - name: singlecard-triton-temperature-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_temperature.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_temperature.py
       - name: singlecard-triton-trace-replay-a3
         os: linux-aarch64-a3-800i-2
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a2a3/test_trace_replay.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_trace_replay.py
   multi_node:
     test_config:
-      - name: GLM-5.1-w8a8c8-128k-1k-90-50-PD
-        config_file_path: GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml
-        config_base_path: tests/e2e/cases/models/configs/GLM
+      - name: GLM-5.3-W8A8C8-A3-200k-PP-PD
+        config_file_path: GLM-5.3-W8A8C8-A3-200k-PP-PD.yaml
+        config_base_path: tests/e2e/cases/features/pp
         size: 4
       - name: DeepSeek-V4-Pro-w4a8-prefix-cache-PD
         config_file_path: DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml
@@ -460,8 +465,8 @@ a3:
         config_file_path: Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml
         config_base_path: tests/e2e/cases/models/configs/Kimi
         size: 2
-      - name: multi-node-GLM-5.1-w8a8-A3
-        config_file_path: GLM5_1-W8A8-A3-dual-nodes.yaml
+      - name: GLM-5.3-Flash-W8A8-130k-PD
+        config_file_path: GLM-5.3-Flash-W8A8-130k-PD.yaml
         config_base_path: tests/e2e/cases/models/configs/GLM
         size: 2
       - name: multi-node-GLM-5.2-w8a8-A3
@@ -484,10 +489,6 @@ a3:
         config_file_path: DeepSeek-V4-flash-w8a8-PD-prefix-MRV2.yaml
         config_base_path: tests/e2e/cases/models/configs/DeepSeek
         size: 2
-      - name: multi-node-qwen-vl-disagg-pd
-        config_file_path: Qwen3-VL-235B-disagg-pd.yaml
-        config_base_path: tests/e2e/cases/models/configs/Qwen
-        size: 2
       - name: multi-node-GLM-5.1-W8A8C8-A3_128k_90_50
         config_file_path: GLM-5.1-W8A8C8-A3_128k_90_50.yaml
         config_base_path: tests/e2e/cases/models/configs/GLM
@@ -508,10 +509,6 @@ a3-560t:
         os: linux-aarch64-a3-800i-16
         config_file_path: qwen_3_6_27b_w8a8_A3.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
-      - name: kimi-k2-thinking
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Kimi-K2-Thinking.yaml
-        config_base_path: tests/e2e/cases/models/configs/Kimi
       - name: DeepSeek-V4-Flash-W8A8-A3
         os: linux-aarch64-a3-800i-16
         config_file_path: DeepSeek-V4-Flash-W8A8-A3.yaml
@@ -524,10 +521,6 @@ a3-560t:
         os: linux-aarch64-a3-800i-16
         config_file_path: Qwen3.5-122B-A10B-W8A8-A3.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
-      - name: mtpx-deepseek-r1-0528-w8a8
-        os: linux-aarch64-a3-800i-16
-        config_file_path: MTPX-DeepSeek-R1-0528-W8A8.yaml
-        config_base_path: tests/e2e/cases/models/configs/DeepSeek
       - name: kimi-k2.6_max_model_len
         os: linux-aarch64-a3-800i-16
         config_file_path: kimi-k2.6_max_model_len.yaml
@@ -535,10 +528,6 @@ a3-560t:
       - name: Kimi-K2.6-w4a8-A3
         os: linux-aarch64-a3-800i-16
         config_file_path: Kimi-K2.6-w4a8-A3.yaml
-        config_base_path: tests/e2e/cases/models/configs/Kimi
-      - name: kimi-k2.5
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Kimi-K2.5.yaml
         config_base_path: tests/e2e/cases/models/configs/Kimi
       - name: glm-5.1-w8a8-prefill-mc2
         os: linux-aarch64-a3-800i-16
@@ -548,33 +537,17 @@ a3-560t:
         os: linux-aarch64-a3-800i-16
         config_file_path: MiniMax-M3-BF16-A3.yaml
         config_base_path: tests/e2e/cases/models/configs/MiniMax
-      - name: Deepseek_R1_W8A8_Reasoning_output_A3
+      - name: Kimi-K2.6-W4A8-PCP-DCP
         os: linux-aarch64-a3-800i-16
-        config_file_path: Deepseek_R1_W8A8_Reasoning_output_A3.yaml
-        config_base_path: tests/e2e/cases/models/configs/DeepSeek
-      - name: deepseek-r1-0528-w8a8
+        config_file_path: Kimi-K2.6-W4A8-PCP-DCP.yaml
+        config_base_path: tests/e2e/cases/features/context_parallel
+      - name: glm-5.2-W4A8C8-DSpark-PCP
         os: linux-aarch64-a3-800i-16
-        config_file_path: DeepSeek-R1-0528-W8A8.yaml
-        config_base_path: tests/e2e/cases/models/configs/DeepSeek
-      - name: Deepseek_R1_W8A8_A3
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Deepseek_R1_W8A8_A3.yaml
-        config_base_path: tests/e2e/cases/models/configs/DeepSeek
-      - name: Qwq_32b_A3
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Qwq_32b_A3.yaml
-        config_base_path: tests/e2e/cases/models/configs/Qwen
+        config_file_path: glm-5.2-W4A8C8-DSpark-PCP.yaml
+        config_base_path: tests/e2e/cases/features/context_parallel
       - name: Qwen3.5-397B-A17B-w8a8-mtp
         os: linux-aarch64-a3-800i-16
         config_file_path: Qwen3.5-397B-A17B-W8A8-mtp-A3.yaml
-        config_base_path: tests/e2e/cases/models/configs/Qwen
-      - name: deepseek-r1-0528-w8a8-prefix-cache
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Prefix-Cache-DeepSeek-R1-0528-W8A8.yaml
-        config_base_path: tests/e2e/cases/models/configs/DeepSeek
-      - name: qwen3-vl-235b-a22b-instruct-w8a8
-        os: linux-aarch64-a3-800i-16
-        config_file_path: Qwen3-VL-235B-A22B-Instruct-W8A8.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3-235B-A22B-W8A8_piecewise_fullgraph_A3
         os: linux-aarch64-a3-800i-16
@@ -584,10 +557,6 @@ a3-560t:
         os: linux-aarch64-a3-800i-8
         config_file_path: acceptace_rate_deepseekv4-flash-w8a8-mtp.yaml
         config_base_path: tests/e2e/cases/models/configs/DeepSeek
-      - name: kimi25_w4a8_step_3_7
-        os: linux-aarch64-a3-800i-16
-        config_file_path: kimi25_w4a8_step_3_7.yaml
-        config_base_path: tests/e2e/cases/models/configs/Kimi
       - name: glm-5.2-w4a8c8-sfa-dcp
         os: linux-aarch64-a3-800i-16
         config_file_path: GLM-5.2-W4A8C8-SFA-DCP.yaml
@@ -643,38 +612,42 @@ a3-560t:
         os: linux-aarch64-a3-800i-2
         config_file_path: Qwen3-32B-QuaRot-eagle3.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
+      - name: Qwen3-30B-A3B-VWN-eagle3-PCP
+        os: linux-aarch64-a3-800i-8
+        config_file_path: Qwen3-30B-A3B-VWN-eagle3-PCP.yaml
+        config_base_path: tests/e2e/cases/features/context_parallel
 310p:
   single_node:
     test_config:
-      # Single-card operator tests: one explicit pytest file per task.
-      - name: singlecard-ascendc-causal-conv1d-310-310p
+      # Single-card operator files; device-specific cases retain their pytest guards.
+      - name: singlecard-ops-causal-conv1d-310-310p
         os: linux-aarch64-310p-1
         tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_causal_conv1d_310.py
-      - name: singlecard-ascendc-recurrent-gated-delta-rule-310-310p
+      - name: singlecard-ops-recurrent-gated-delta-rule-310-310p
         os: linux-aarch64-310p-1
         tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_recurrent_gated_delta_rule_310.py
       - name: Qwen3-8B-w8a8sc-310p
-        os: linux-aarch64-310p-4
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3-8B-w8a8sc-310p.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3-14B-w8a8sc-310p
-        os: linux-aarch64-310p-4
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3-14B-w8a8sc-310p.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3-32B-w8a8sc-310p
-        os: linux-aarch64-310p-4
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3-32B-w8a8sc-310p.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3.6-27B-W8A8
-        os: linux-aarch64-310p-2
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3.6-27B-W8A8-310P-300I-DUO.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3.6-35B-A3B-w8a8
-        os: linux-aarch64-310p-4
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3.6-35B-W8A8-310P-300I-DUO.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
       - name: Qwen3.6-35B-A3B-w8a8-310p-MTP
-        os: linux-aarch64-310p-4
+        os: linux-aarch64-310p-8
         config_file_path: Qwen3.6-35B-A3B-w8a8-310p-MTP.yaml
         config_base_path: tests/e2e/cases/models/configs/Qwen
 
@@ -691,64 +664,67 @@ a5:
 #         config_file_path: Qwen3.5-397B-A17B-w4a8-mtp.yaml
   single_node:
     test_config:
-      # Single-card operator tests: one explicit pytest file per task.
-      - name: singlecard-ascendc-add-rms-norm-bias-a5
+      # Single-card operator files; device-specific cases retain their pytest guards.
+      - name: singlecard-ops-add-rms-norm-bias-a5-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_add_rms_norm_bias.py
-      - name: singlecard-ascendc-attn-res-fwd-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_add_rms_norm_bias_a5.py
+      - name: singlecard-ops-attn-res-fwd-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_attn_res_fwd.py
-      - name: singlecard-ascendc-compressor-metadata-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_attn_res_fwd.py
+      - name: singlecard-ops-compressor-metadata-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_compressor_metadata.py
-      - name: singlecard-ascendc-gmm-situ-small-experts-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_compressor_metadata.py
+      - name: singlecard-ops-copy-conv-state-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_gmm_situ_small_experts.py
-      - name: singlecard-ascendc-inplace-partial-rotary-mul-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_copy_conv_state.py
+      - name: singlecard-ops-gmm-situ-small-experts-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_inplace_partial_rotary_mul.py
-      - name: singlecard-ascendc-kda-gate-cumsum-vllm-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_gmm_situ_small_experts.py
+      - name: singlecard-ops-inplace-partial-rotary-mul-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_kda_gate_cumsum_vllm.py
-      - name: singlecard-ascendc-kda-layout-swap12-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_inplace_partial_rotary_mul.py
+      - name: singlecard-ops-kda-gate-cumsum-vllm-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_kda_layout_swap12.py
-      - name: singlecard-ascendc-kv-quant-sparse-flash-attention-vllm-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_gate_cumsum_vllm.py
+      - name: singlecard-ops-kda-layout-swap12-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_kv_quant_sparse_flash_attention_vllm.py
-      - name: singlecard-ascendc-npu-hc-pre-v2-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_layout_swap12.py
+      - name: singlecard-ops-kv-quant-sparse-flash-attention-vllm-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_npu_hc_pre_v2.py
-      - name: singlecard-ascendc-npu-hc-pre-v3-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_kv_quant_sparse_flash_attention_vllm.py
+      - name: singlecard-ops-mla-strided-kv-writer-a5-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_npu_hc_pre_v3.py
-      - name: singlecard-ascendc-npu-moe-gating-top-k-hash-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_mla_strided_kv_writer_a5.py
+      - name: singlecard-ops-npu-hc-pre-v2-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_npu_moe_gating_top_k_hash.py
-      - name: singlecard-ascendc-qfa-c8-paged-layout-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_hc_pre_v2.py
+      - name: singlecard-ops-npu-hc-pre-v3-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_qfa_c8_paged_layout.py
-      - name: singlecard-ascendc-qli-candidate-rows-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_hc_pre_v3.py
+      - name: singlecard-ops-npu-moe-gating-top-k-hash-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_qli_candidate_rows.py
-      - name: singlecard-ascendc-scatter-nd-update-sk-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_npu_moe_gating_top_k_hash.py
+      - name: singlecard-ops-qfa-c8-paged-layout-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_scatter_nd_update_sk.py
-      - name: singlecard-ascendc-situ-mx-quant-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_qfa_c8_paged_layout.py
+      - name: singlecard-ops-qli-candidate-rows-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_situ_mx_quant.py
-      - name: singlecard-ascendc-sparse-flash-attention-dcp-lse-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_qli_candidate_rows.py
+      - name: singlecard-ops-scatter-nd-update-sk-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/ascendc/a5/test_sparse_flash_attention_dcp_lse.py
-      - name: singlecard-triton-copy-conv-state-a5
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_scatter_nd_update_sk.py
+      - name: singlecard-ops-situ-mx-quant-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a5/test_copy_conv_state.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_situ_mx_quant.py
+      - name: singlecard-ops-sparse-flash-attention-dcp-lse-a5
+        os: linux-aarch64-a5-4
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/test_sparse_flash_attention_dcp_lse.py
       - name: singlecard-triton-dcp-a2a-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a5/test_dcp_a2a.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_dcp_a2a.py
       - name: singlecard-triton-rope-a5
         os: linux-aarch64-a5-4
-        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/a5/test_rope.py
+        tests: tests/e2e/nightly/single_node/ops/singlecard_ops/triton/test_rope.py
       - name: Qwen3_235b_w8a8_A5
         os: linux-aarch64-a5-8
         config_file_path: Qwen3_235b_w8a8_A5.yaml

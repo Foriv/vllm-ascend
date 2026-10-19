@@ -99,7 +99,6 @@ def test_packed_cache_reuses_global_capacity_and_records_recycled_state_pages():
     assert coordinator.single_type_managers[-1]._record_new_block_ids
 
 
-@pytest.mark.skipif(not hasattr(SlidingWindowMLASpec, "bounded_replay"), reason="vLLM lacks SWA bounded replay")
 @pytest.mark.parametrize("group_count", [1, 2])
 @pytest.mark.parametrize("wrapped", [False, True])
 def test_swa_only_replay_keeps_private_blocks_without_prefix_hits(group_count, wrapped):
@@ -1324,6 +1323,7 @@ def test_ascend_mamba_manager_uses_logical_block_size_with_prefix_caching() -> N
     manager = AscendMambaManager(**manager_kwargs)
 
     assert manager.block_size == mamba_spec.block_size
+    assert manager.get_num_blocks_to_allocate("prefill", 16, [], 0, 0, 16, prefill_end=16) == 1
 
 
 def test_ascend_mamba_cache_lookup_ignores_dcp_sharding() -> None:
