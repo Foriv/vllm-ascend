@@ -3,6 +3,13 @@ import gc
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
+
 NUM_TOKENS = [1, 4096]
 NUM_QKV_HEADS = [(2, 1), (16, 2)]
 HEAD_SIZES = [128, 256]

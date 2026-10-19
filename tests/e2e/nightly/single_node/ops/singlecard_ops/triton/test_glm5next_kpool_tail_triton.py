@@ -5,8 +5,14 @@ import pytest
 import torch
 import torch_npu  # noqa: F401
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.glm5_next_kpool_tail_compress import (
     glm5_next_kpool_tail_compress_and_write_cache_triton as compress,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 HEAD_DIM = 128

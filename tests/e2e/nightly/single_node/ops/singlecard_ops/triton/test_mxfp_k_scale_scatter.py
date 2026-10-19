@@ -18,7 +18,13 @@ from vllm_ascend.attention.attention_c8_mxfp import (
     mxfp_paged_cache_views,
     scatter_mxfp_k_scale_cache,
 )
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.mxfp_k_scale import _scatter_k_scale_kernel
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 def _write_reference(raw, slots, values, blocks, heads, pitch, offset):

@@ -1,10 +1,17 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
 import torch
 
 from tests.ut.base import PytestBase
 from vllm_ascend._310p.ops.fla.chunk_gated_delta_rule import chunk_gated_delta_rule_pytorch
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.fla.chunk import chunk_gated_delta_rule
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 class TestChunkGatedDeltaRule(PytestBase):

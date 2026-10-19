@@ -3,6 +3,8 @@ import gc
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.spec_decode.utils import (
     copy_and_expand_dflash_and_dspark_inputs_kernel,
     prepare_inputs_padded_kernel,
@@ -11,6 +13,10 @@ from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.spec_decode.dflash_proposer import (
     _COPY_EXPAND_TILE_SIZE,
     _compute_num_programs,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 PARALLEL_DRAFTING_TOKEN_ID = 151643

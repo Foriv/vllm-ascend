@@ -50,8 +50,14 @@ import torch
 # import below, and it must not override an explicitly exported value.
 os.environ.setdefault("VLLM_VERSION", "0.31.0")
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton  # noqa: E402
 from vllm_ascend.ops.triton.v2.metrics.num_nans import _num_nans_kernel  # noqa: E402
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 BLOCK_SIZE = 8192
 SEED = 42

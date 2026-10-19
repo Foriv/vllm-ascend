@@ -5,7 +5,13 @@ import pytest
 import torch
 import torch_npu  # noqa: F401
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.msa.msa_m3_index_postprocess import index_decode_topk_fused
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 @pytest.mark.parametrize("shape", [(0, 0, 0), (0, 3, 32), (4, 0, 32), (4, 0, 0)])

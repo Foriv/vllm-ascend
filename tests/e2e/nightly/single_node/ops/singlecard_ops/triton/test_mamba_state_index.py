@@ -5,16 +5,23 @@ import math
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.mamba.state_index import (
     STATE_IO_BLOCK_SIZE,
     gather_ssm_states,
     scatter_ssm_states_,
 )
 
-pytestmark = pytest.mark.skipif(
-    not hasattr(torch, "npu") or not torch.npu.is_available(),
-    reason="Mamba state index tests require an Ascend NPU",
-)
+pytestmark = [
+    pytest.mark.skipif(
+        not hasattr(torch, "npu") or not torch.npu.is_available(),
+        reason="Mamba state index tests require an Ascend NPU",
+    ),
+    pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    ),
+]
 
 
 @pytest.mark.parametrize("padding", [0, 13])

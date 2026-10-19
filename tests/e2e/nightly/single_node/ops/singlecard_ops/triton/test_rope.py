@@ -178,6 +178,9 @@ def _rope_fp8_pytorch_native(
     return apply_rope(query), apply_rope(key)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("is_neox_style", IS_NEOX_STYLE)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_q_heads,num_k_heads", NUM_QK_HEADS)
@@ -217,6 +220,9 @@ def test_rotary_embedding_triton_kernel(
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("max_position_embeddings", MAX_POSITION_EMBEDDINGS)
 @pytest.mark.parametrize("is_neox_style", IS_NEOX_STYLE)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
@@ -261,6 +267,7 @@ def test_rotary_embedding_triton_kernel_with_cos_sin_cache(
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(get_ascend_device_type() != AscendDeviceType.A5, reason="Requires Ascend A5")
 @pytest.mark.parametrize(
     "num_tokens,num_q_heads,num_k_heads,head_size,rotary_dim",
     FP8_ROPE_CASES,
@@ -336,6 +343,9 @@ def test_rotary_embedding_triton_kernel_fp8(
     torch.npu.reset_peak_memory_stats()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("is_neox_style", IS_NEOX_STYLE)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_q_heads", SISO_NUM_HEADS)

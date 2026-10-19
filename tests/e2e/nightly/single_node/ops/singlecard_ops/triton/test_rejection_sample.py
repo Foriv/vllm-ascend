@@ -3,6 +3,8 @@ import gc
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.reject_sample import (
     cal_grid_and_block_size,
     expand_kernel,
@@ -20,6 +22,10 @@ from vllm_ascend.sample.rejection_sampler import (
     rejection_random_sample_block_verify_pytorch,
     rejection_random_sample_pytorch,
     sample_recovered_tokens_pytorch,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 KERNEL_TEST_ITERS = 1

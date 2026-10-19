@@ -5,12 +5,19 @@ import pytest
 import torch
 from vllm.triton_utils import tl, triton
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.mamba.postprocess import (
     _copy_temporal_state,
     postprocess_mamba_fused_kernel,
 )
 
-pytestmark = pytest.mark.skipif(not torch.npu.is_available(), reason="NPU required")
+pytestmark = [
+    pytest.mark.skipif(not torch.npu.is_available(), reason="NPU required"),
+    pytest.mark.skipif(
+        get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+    ),
+]
 
 
 @triton.jit

@@ -3,6 +3,8 @@
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.dcp import dcp_a2a
 from vllm_ascend.ops.triton.dcp.dcp_a2a import (
     fused_dcp_lse_combine,
@@ -148,6 +150,7 @@ def _check_a5_batching_case(
         assert combine_spy.calls == int(expected_combine_batch)
 
 
+@pytest.mark.skipif(get_ascend_device_type() != AscendDeviceType.A5, reason="Requires Ascend A5")
 @pytest.mark.parametrize(
     ("num_tokens", "num_heads", "head_dim", "dcp_size", "output_stride", "local_stride", "run_combine"),
     _A5_FIXED_CASES,
@@ -168,6 +171,7 @@ def test_a5_generalized_batching_matches_scalar_path(
     )
 
 
+@pytest.mark.skipif(get_ascend_device_type() != AscendDeviceType.A5, reason="Requires Ascend A5")
 @pytest.mark.parametrize(
     "case",
     [
@@ -203,6 +207,9 @@ def test_a5_core_relative_batching_boundaries(monkeypatch: pytest.MonkeyPatch, c
     _check_a5_batching_case(monkeypatch, num_tokens, 12, 512, 3, 1, 1, True)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("dtype", [torch.bfloat16, torch.float16])
 @pytest.mark.parametrize("scatter_dim", [0, 1])
 @pytest.mark.parametrize("head_dim", [96, 128, 160, 256])
@@ -259,6 +266,9 @@ def test_pack_and_fused_lse_combine(
     torch.testing.assert_close(actual, expected, atol=tolerance, rtol=tolerance)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("scatter_dim", [0, 1])
 @torch.inference_mode()
 def test_stride_aware_pack(scatter_dim: int) -> None:
@@ -311,6 +321,9 @@ def test_stride_aware_pack(scatter_dim: int) -> None:
     torch.testing.assert_close(actual, expected, atol=2e-2, rtol=2e-2)
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("scatter_dim", [0, 1])
 @torch.inference_mode()
 def test_invalid_lse_and_all_invalid_rows(scatter_dim: int) -> None:
@@ -362,6 +375,9 @@ def test_invalid_lse_and_all_invalid_rows(scatter_dim: int) -> None:
     assert torch.count_nonzero(actual[1, 0]).item() == 0
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("dtype", [torch.bfloat16, torch.float16])
 @pytest.mark.parametrize("scatter_dim", [0, 1])
 @torch.inference_mode()
@@ -416,6 +432,9 @@ def test_finite_lse_outside_activation_dtype_range(
     assert torch.count_nonzero(actual).item() > 0
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @torch.inference_mode()
 def test_mla_history_lse_then_current_merge() -> None:
     num_tokens = 48
@@ -444,6 +463,9 @@ def test_mla_history_lse_then_current_merge() -> None:
     assert torch.isfinite(actual).all()
 
 
+@pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 @pytest.mark.parametrize("scatter_dim", [0, 1])
 @pytest.mark.parametrize("dcp_size", [1, 2, 8])
 @pytest.mark.parametrize("head_dim", [96, 256, 512])

@@ -10,8 +10,14 @@ import pytest
 import torch
 from vllm.v1.sample.ops.penalties import apply_all_penalties as v1_apply_all_penalties
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
 from vllm_ascend.sample.penalties import apply_all_penalties as ascend_apply_all_penalties
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 @pytest.fixture(autouse=True)

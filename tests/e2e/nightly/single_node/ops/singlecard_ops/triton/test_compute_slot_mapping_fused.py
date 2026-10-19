@@ -6,10 +6,16 @@ import itertools
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.compute_slot_mapping import (
     _compute_slot_mapping_fused_groups_adaptive_kernel,
     _compute_slot_mapping_fused_groups_kernel,
     compute_slot_mapping_fused_groups,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 

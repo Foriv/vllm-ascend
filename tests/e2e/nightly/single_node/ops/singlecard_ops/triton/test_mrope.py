@@ -4,7 +4,13 @@ import pytest
 import torch
 from vllm.model_executor.layers.rotary_embedding.mrope import triton_mrope
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 MROPE_SECTION = [[32, 32, 32]]
 DTYPES = [torch.bfloat16, torch.float16]

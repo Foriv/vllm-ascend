@@ -1,5 +1,8 @@
 import pytest
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
+
 torch = pytest.importorskip("torch")
 pytest.importorskip("vllm")
 pytest.importorskip("torch_npu")
@@ -16,6 +19,10 @@ upstream_trace_replay_kernel = upstream_trace_replay._trace_replay_kernel
 import vllm_ascend.patch.worker  # noqa: E402,F401
 from vllm_ascend.worker.v2.sample.trace_replay import (  # noqa: E402
     apply_trace_tokens,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 DEVICE = "npu"

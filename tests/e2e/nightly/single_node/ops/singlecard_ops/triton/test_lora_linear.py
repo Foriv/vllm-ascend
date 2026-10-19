@@ -6,6 +6,8 @@ import itertools
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.lora.lora_ops import (
     _LORA_TRITON_BLOCK_K,
     _LORA_TRITON_K_SPLIT,
@@ -15,6 +17,10 @@ from vllm_ascend.lora.lora_ops import (
     _lora_shrink_splitk_kernel,
 )
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 # TP-local Qwen3.5-27B inference shapes. The single-slice case covers the
 # transposed-B path; QKV and QKVZ cover three- and four-slice packed weights.

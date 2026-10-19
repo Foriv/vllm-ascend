@@ -7,7 +7,13 @@ import gc
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.sparse_index_remap import remap_sparse_indices_triton
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 def _torch_reference(topk_indices: torch.Tensor, dcp_size: int, dcp_rank: int, interleave_size: int) -> torch.Tensor:

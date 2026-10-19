@@ -10,11 +10,17 @@ from vllm.v1.worker.gpu.block_table import (
     _compute_slot_mappings_kernel as ref_compute_slot_mappings_kernel,
 )
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.v2.block_table.compute_slot_mappings import (
     _compute_slot_mappings_kernel as ascend_compute_slot_mappings_kernel,
 )
 from vllm_ascend.worker.v2.block_table import (
     AscendBlockTables,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 

@@ -5,7 +5,13 @@ import pytest
 import torch
 import torch.nn.functional as F
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.linearnorm.fused_eh_norm import fused_eh_norm
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 TOLERANCES = {
     torch.float16: (2e-3, 2e-2),

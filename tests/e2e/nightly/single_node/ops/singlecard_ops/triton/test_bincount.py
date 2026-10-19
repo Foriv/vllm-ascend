@@ -2,7 +2,13 @@ import pytest
 import torch
 from vllm.triton_utils import triton
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.worker.v2.sample.penalties import _bincount_kernel
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 
 def torch_bincount(

@@ -19,9 +19,15 @@ graph-mode specifics that the integration review called out:
 import pytest
 import torch
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.dspark_swa_indices import (
     build_dspark_swa_slot_indices_triton,
     dspark_swa_indices_supported,
+)
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
 )
 
 DEVICE = "npu"

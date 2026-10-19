@@ -46,12 +46,18 @@ import pytest
 import torch
 from einops import rearrange
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.mamba.lightning_attn import (
     AscendLightningAttentionKernel,
     lightning_attention_npu,
     lightning_attention_npu_,
 )
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 # ---------------------------------------------------------------------------
 # Naive reference implementations (pure PyTorch, no Triton)

@@ -2,8 +2,14 @@ import pytest
 import torch
 import torch.nn.functional as F
 
+from vllm_ascend.device.device_config import get_ascend_device_type
+from vllm_ascend.device.hardware import AscendDeviceType
 from vllm_ascend.ops.triton.layernorm_gated import layer_norm_fwd_npu
 from vllm_ascend.ops.triton.triton_utils import init_device_properties_triton
+
+pytestmark = pytest.mark.skipif(
+    get_ascend_device_type() not in (AscendDeviceType.A2, AscendDeviceType.A3), reason="Requires Ascend A2/A3"
+)
 
 DEVICE = "npu"
 TOLERANCES = {
