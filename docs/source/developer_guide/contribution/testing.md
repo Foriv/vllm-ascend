@@ -167,12 +167,12 @@ There are several principles to follow when writing unit tests:
     pytest -sv tests/ut/test_ascend_config.py
     ```
 
-Single-card operator tests are registered by Python file in
+Single-card operator tests are registered by directory in
 `.github/workflows/configs/nightly_config.yaml`, using `name`, runner (`os`),
-and test path (`tests`). Keep the existing test directories and independent
+and directory path (`tests`). Keep the existing test directories and independent
 test contracts; device-specific cases retain their pytest skip conditions.
-The same file can be registered for both A3 and A5. Generic Triton coverage
-defaults to A3 until additional device support is established.
+The `singlecard_ops/` directory is registered once for A3 and once for A5;
+pytest recursively collects tests and applies their existing skip conditions.
 Use `/nightly <name>` to request a configured task. This suite is not added
 to PR full/precise CI or `/e2e` selection. Nightly operator tasks expose the
 first assigned NPU, or device 0 when no assignment is provided.
