@@ -174,10 +174,3 @@ estimated_times:
   # Conservative scheduling estimate; refine after the first A5 run.
   tests/e2e/pull_request/one_card/test_mla_fp8_decode_layout_a5.py: 180
   tests/e2e/pull_request/one_card/test_glm5next_pooled_cache_write.py: 30
-  # Historical A2 full-file references (2026-10-15, 05ac43afd), including pytest startup.
-  # Provisional for A3: +10%, rounded to 10s. Nightly does not consume this mapping.
-  tests/e2e/nightly/single_node/ops/singlecard_ops/test_dequant_situ_quant.py: 60
-  tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_gate_cumsum_vllm.py: 40
-  tests/e2e/nightly/single_node/ops/singlecard_ops/test_kda_layout_swap12.py: 40
-  tests/e2e/nightly/single_node/ops/singlecard_ops/test_rms_norm_cast.py: 40
-  tests/e2e/nightly/single_node/ops/singlecard_ops/test_copy_conv_state.py: 50
